@@ -20,6 +20,7 @@ struct Item {
     std::string description;
     std::string createdAt;
     bool isDeleted = false;
+    ItemCategory category = ItemCategory::Other;
 };
 
 struct Booking {
