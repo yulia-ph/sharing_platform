@@ -5,7 +5,7 @@
 namespace share {
 
 class PasswordHasher {
-public:
+   public:
     // Хеширует пароль. Соль генерируется автоматически внутри libsodium
     // и сохраняется вместе с хешем в одной строке.
     // Возвращает строку вида:
@@ -15,8 +15,7 @@ public:
 
     // Проверяет, соответствует ли пароль сохранённому хешу.
     // Возвращает true, если пароль верный.
-    static bool verifyPassword(const std::string& password,
-                               const std::string& storedHash);
+    static bool verifyPassword(const std::string& password, const std::string& storedHash);
 };
 
-}
+}  // namespace share

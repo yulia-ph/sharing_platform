@@ -6,4 +6,4 @@ namespace share {
 
 void runMigrations(Database& db);
 
-} 
+}

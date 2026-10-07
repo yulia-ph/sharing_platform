@@ -2,14 +2,14 @@
 
 #include <stdexcept>
 
-namespace share{
+namespace share {
 
-    Database::Database(const std::string& path) {
+Database::Database(const std::string& path) {
     if (sqlite3_open(path.c_str(), &db_) != SQLITE_OK) {
         std::string msg = db_ ? sqlite3_errmsg(db_) : "unknown error";
         if (db_) sqlite3_close(db_);
         db_ = nullptr;
-        throw std::runtime_error("Не удалось открыть БД: " + msg);
+        throw std::runtime_error("Unable to open database file: " + msg);
     }
     exec("PRAGMA foreign_keys = ON;");
     exec("PRAGMA journal_mode = WAL;");
@@ -29,8 +29,14 @@ void Database::exec(const std::string& sql) {
     }
 }
 
-void Database::beginTransaction() { exec("BEGIN IMMEDIATE;"); }
-void Database::commit()           { exec("COMMIT;"); }
-void Database::rollback()         { exec("ROLLBACK;"); }
-
+void Database::beginTransaction() {
+    exec("BEGIN IMMEDIATE;");
 }
+void Database::commit() {
+    exec("COMMIT;");
+}
+void Database::rollback() {
+    exec("ROLLBACK;");
+}
+
+}  // namespace share

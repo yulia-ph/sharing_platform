@@ -19,4 +19,4 @@ class UserRepository {
     Database& db_;
 };
 
-}  
+}  // namespace share

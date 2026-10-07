@@ -1,20 +1,22 @@
 #pragma once
 
-#include <string>
-
 #include <sqlite3.h>
 
-namespace share{
+#include <string>
 
-class Database{     
-public:
+namespace share {
+
+class Database {
+   public:
     explicit Database(const std::string& path);
     ~Database();
 
     Database(const Database&) = delete;
     Database& operator=(const Database&) = delete;
-        
-    sqlite3* handle() { return db_; }
+
+    sqlite3* handle() {
+        return db_;
+    }
 
     void exec(const std::string& sql);
 
@@ -22,8 +24,8 @@ public:
     void commit();
     void rollback();
 
-private:
+   private:
     sqlite3* db_ = nullptr;
 };
 
-}
+}  // namespace share

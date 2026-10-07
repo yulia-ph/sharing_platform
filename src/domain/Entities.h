@@ -6,7 +6,7 @@
 #include "Enums.h"
 
 namespace share {
-    
+
 struct User {
     int id = 0;
     std::string username;
@@ -33,4 +33,4 @@ struct Booking {
     std::optional<std::string> returnedAt;
     std::string createdAt;
 };
-}
+}  // namespace share

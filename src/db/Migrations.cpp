@@ -45,6 +45,4 @@ void runMigrations(Database& db) {
         )");
 }
 
-} 
-
- 
+}  // namespace share

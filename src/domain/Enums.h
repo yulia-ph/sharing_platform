@@ -15,4 +15,4 @@ std::string toString(BookingStatus status);
 
 BookingStatus bookingStatusFromString(const std::string& s);
 
-}
+}  // namespace share
