@@ -15,10 +15,10 @@
 | Открытие/закрытие БД, exec, транзакции| arin-aa|✅ Готово|
 | Создать все таблицы и индексы|arin-aa |✅ Готово|
 | Реализовать UserRepository| arin-aa|✅ Готово|
-| Хеширование пароля| daradoroncova1-debug|-|
+| Реализовать AuthService| yulia-ph|✅ Готово|
 | Утилиты даты |yulia-ph|✅ Готово|
 | Чтение с защитой от дурака| daradoroncova1-debug|-|
 | Реализовать ConsoleApp| daradoroncova1-debug|-|
 | Создать класс меню, меню входа/регистрации| daradoroncova1-debug|-|
-| Реализовать AuthService| yulia-ph|-|
+| Хеширование пароля| daradoroncova1-debug|-|
 | | |
