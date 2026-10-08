@@ -1,20 +1,27 @@
 #include "Enums.h"
 
+#include <stdexcept>
+
 namespace share {
 
 std::string bookingStatusToString(BookingStatus status) {
     switch (status) {
-        case BookingStatus::Reserved:  return "reserved";
-        case BookingStatus::Active:    return "active";
-        case BookingStatus::Returned:  return "returned";
-        case BookingStatus::Cancelled: return "cancelled";
+        case BookingStatus::Reserved:
+            return "reserved";
+        case BookingStatus::Active:
+            return "active";
+        case BookingStatus::Returned:
+            return "returned";
+        case BookingStatus::Cancelled:
+            return "cancelled";
     }
+    return "reserved";  // на всякий случай
 }
 
 BookingStatus bookingStatusFromString(const std::string& s) {
-    if (s == "reserved")  return BookingStatus::Reserved;
-    if (s == "active")    return BookingStatus::Active;
-    if (s == "returned")  return BookingStatus::Returned;
+    if (s == "reserved") return BookingStatus::Reserved;
+    if (s == "active") return BookingStatus::Active;
+    if (s == "returned") return BookingStatus::Returned;
     if (s == "cancelled") return BookingStatus::Cancelled;
     throw std::runtime_error("Неизвестный статус: " + s);
 }
@@ -31,7 +38,7 @@ std::string itemCategoryToString(ItemCategory category){
         case ItemCategory::Services:     return "services";
         case ItemCategory::Other:        return "other";
     }
-};
+}
 
 ItemCategory itemCategoryFromString(const std::string& s){
     if (s == "electronics")  return ItemCategory::Electronics;
@@ -44,6 +51,6 @@ ItemCategory itemCategoryFromString(const std::string& s){
     if (s == "services")     return ItemCategory::Services;
     if (s == "other")        return ItemCategory::Other;
     throw std::runtime_error("Неизвестная категория: " + s);
-};
+}
 
 }

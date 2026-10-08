@@ -31,4 +31,5 @@ std::string itemCategoryToString(ItemCategory category);
 
 ItemCategory itemCategoryFromString(const std::string& s);
 
+
 }

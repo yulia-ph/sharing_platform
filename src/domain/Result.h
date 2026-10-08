@@ -17,4 +17,4 @@ struct Result {
     }
 };
 
-}
+}  // namespace share
