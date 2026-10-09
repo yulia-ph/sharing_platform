@@ -1,9 +1,9 @@
 #include "UserRepository.h"
 
+#include <sqlite3.h>
+
 #include <stdexcept>
 #include <string>
-
-#include <sqlite3.h>
 
 namespace share {
 
@@ -11,7 +11,8 @@ std::optional<User> UserRepository::findById(int id) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT id, username, password_hash FROM users WHERE id = ?";
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw std::runtime_error(std::string("UserRepository::findById: ") + sqlite3_errmsg(db_.handle()));
+        throw std::runtime_error(std::string("UserRepository::findById: ") +
+                                 sqlite3_errmsg(db_.handle()));
     }
 
     sqlite3_bind_int(stmt, 1, id);
@@ -39,7 +40,8 @@ std::optional<User> UserRepository::findByUsername(const std::string& username) 
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT id, username, password_hash FROM users WHERE username = ?";
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw std::runtime_error(std::string("UserRepository::findByUsername: ") + sqlite3_errmsg(db_.handle()));
+        throw std::runtime_error(std::string("UserRepository::findByUsername: ") +
+                                 sqlite3_errmsg(db_.handle()));
     }
 
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
@@ -65,11 +67,12 @@ bool UserRepository::existsUsername(const std::string& username) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw std::runtime_error(std::string("UserRepository::existsUsername: ") + sqlite3_errmsg(db_.handle()));
+        throw std::runtime_error(std::string("UserRepository::existsUsername: ") +
+                                 sqlite3_errmsg(db_.handle()));
     }
 
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_TRANSIENT);
-    int stepResult=sqlite3_step(stmt);
+    int stepResult = sqlite3_step(stmt);
     bool exists = (stepResult == SQLITE_ROW);
     if (stepResult != SQLITE_ROW && stepResult != SQLITE_DONE) {
         std::string err = sqlite3_errmsg(db_.handle());
@@ -85,7 +88,8 @@ int UserRepository::insert(const User& user) {
     const char* sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)";
 
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        throw std::runtime_error(std::string("UserRepository::insert: ") + sqlite3_errmsg(db_.handle()));
+        throw std::runtime_error(std::string("UserRepository::insert: ") +
+                                 sqlite3_errmsg(db_.handle()));
     }
 
     sqlite3_bind_text(stmt, 1, user.username.c_str(), -1, SQLITE_TRANSIENT);
@@ -96,7 +100,7 @@ int UserRepository::insert(const User& user) {
         sqlite3_finalize(stmt);
         throw std::runtime_error("UserRepository::insert: " + err);
     }
-   
+
     sqlite3_finalize(stmt);
     return static_cast<int>(sqlite3_last_insert_rowid(db_.handle()));
 }
