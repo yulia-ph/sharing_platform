@@ -1,5 +1,5 @@
 #include "Database.h"
-
+#include <string>
 #include <stdexcept>
 
 namespace share {
