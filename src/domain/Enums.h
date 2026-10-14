@@ -4,12 +4,7 @@
 
 namespace share {
 
-enum class BookingStatus {
-    Reserved,
-    Active,
-    Returned,
-    Cancelled,
-};
+enum class BookingStatus { Reserved, Active, Returned, Cancelled, Overdue };
 
 std::string bookingStatusToString(BookingStatus status);
 
@@ -24,12 +19,11 @@ enum class ItemCategory {
     Leisure,
     Tools,
     Services,
-    Other,
+    Other
 };
 
 std::string itemCategoryToString(ItemCategory category);
 
 ItemCategory itemCategoryFromString(const std::string& s);
 
-
-}
+}  // namespace share

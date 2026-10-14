@@ -14,8 +14,9 @@ std::string bookingStatusToString(BookingStatus status) {
             return "returned";
         case BookingStatus::Cancelled:
             return "cancelled";
+        case BookingStatus::Overdue:
+            return "overdue";
     }
-    return "reserved";  // на всякий случай
 }
 
 BookingStatus bookingStatusFromString(const std::string& s) {
@@ -23,34 +24,44 @@ BookingStatus bookingStatusFromString(const std::string& s) {
     if (s == "active") return BookingStatus::Active;
     if (s == "returned") return BookingStatus::Returned;
     if (s == "cancelled") return BookingStatus::Cancelled;
-    throw std::runtime_error("Неизвестный статус: " + s);
+    if (s == "overdue") return BookingStatus::Overdue;
+    throw std::runtime_error("Undefined status: " + s);
 }
 
-std::string itemCategoryToString(ItemCategory category){
+std::string itemCategoryToString(ItemCategory category) {
     switch (category) {
-        case ItemCategory::Electronics:  return "electronics";
-        case ItemCategory::Toys:         return "toys";
-        case ItemCategory::ForKitchen:   return "for kitchen";
-        case ItemCategory::Sports:       return "sports";
-        case ItemCategory::Books:        return "books";
-        case ItemCategory::Leisure:      return "leisure";
-        case ItemCategory::Tools:        return "tools";
-        case ItemCategory::Services:     return "services";
-        case ItemCategory::Other:        return "other";
+        case ItemCategory::Electronics:
+            return "electronics";
+        case ItemCategory::Toys:
+            return "toys";
+        case ItemCategory::ForKitchen:
+            return "for kitchen";
+        case ItemCategory::Sports:
+            return "sports";
+        case ItemCategory::Books:
+            return "books";
+        case ItemCategory::Leisure:
+            return "leisure";
+        case ItemCategory::Tools:
+            return "tools";
+        case ItemCategory::Services:
+            return "services";
+        case ItemCategory::Other:
+            return "other";
     }
 }
 
-ItemCategory itemCategoryFromString(const std::string& s){
-    if (s == "electronics")  return ItemCategory::Electronics;
-    if (s == "toys")         return ItemCategory::Toys;
-    if (s == "for kitchen")  return ItemCategory::ForKitchen;
-    if (s == "sports")       return ItemCategory::Sports;
-    if (s == "books")        return ItemCategory::Books;
-    if (s == "leisure")      return ItemCategory::Leisure;
-    if (s == "tools")        return ItemCategory::Tools;
-    if (s == "services")     return ItemCategory::Services;
-    if (s == "other")        return ItemCategory::Other;
-    throw std::runtime_error("Неизвестная категория: " + s);
+ItemCategory itemCategoryFromString(const std::string& s) {
+    if (s == "electronics") return ItemCategory::Electronics;
+    if (s == "toys") return ItemCategory::Toys;
+    if (s == "for kitchen") return ItemCategory::ForKitchen;
+    if (s == "sports") return ItemCategory::Sports;
+    if (s == "books") return ItemCategory::Books;
+    if (s == "leisure") return ItemCategory::Leisure;
+    if (s == "tools") return ItemCategory::Tools;
+    if (s == "services") return ItemCategory::Services;
+    if (s == "other") return ItemCategory::Other;
+    throw std::runtime_error("Undefined category: " + s);
 }
 
-}
+}  // namespace share

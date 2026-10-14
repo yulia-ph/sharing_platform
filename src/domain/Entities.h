@@ -23,6 +23,11 @@ struct Item {
     ItemCategory category = ItemCategory::Other;
 };
 
+struct ItemShort {
+    int id = 0;
+    std::string title;
+};
+
 struct Booking {
     int id = 0;
     int itemId = 0;
@@ -34,4 +39,13 @@ struct Booking {
     std::optional<std::string> returnedAt;
     std::string createdAt;
 };
+
+struct BookingShort {
+    int id = 0;
+    std::string borrowerUsername;
+    std::string startDate;
+    std::string endDate;
+    BookingStatus status = BookingStatus::Reserved;
+};
+
 }  // namespace share

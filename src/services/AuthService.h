@@ -17,6 +17,7 @@ class AuthService {
     Result registerUser(const std::string& username, const std::string& password,
                         const std::string& passwordDouble);
     std::optional<int> login(const std::string& username, const std::string& password);
+    Result logoutUser(int id);
 
    private:
     UserRepository& users_;
