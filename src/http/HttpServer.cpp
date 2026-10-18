@@ -109,6 +109,16 @@ void HttpServer::run(int port) {
         res.set_content(js, "application/javascript");
     });
 
+    svr.Get("/style.css", [](const auto&, auto& res) {
+        std::string css = readFile("public/style.css");
+        if (css.empty()) {
+            res.status = 404;
+            res.set_content("style.css not found", "text/plain");
+            return;
+        }
+        res.set_content(css, "text/css");
+    });
+
     svr.Post("/api/register", [this](const auto& req, auto& res) {
         std::string body;
         int status = 200;
