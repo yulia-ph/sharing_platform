@@ -3,145 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Sharing Platform</title>
-        <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            /* Мягкий пастельный фон (тёплый персиковый) */
-            background: #fdf6f0; 
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .screen {
-            display: none;
-            /* Тёплый молочный цвет карточки */
-            background: #ffffff;
-            padding: 48px 40px;
-            border-radius: 28px; /* Ещё более круглые углы */
-            /* Мягкая, рассеянная тень */
-            box-shadow: 0 12px 32px rgba(180, 160, 150, 0.12); 
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid #f6ede4; /* Едва заметная теплая рамка */
-        }
-
-        .screen.active { display: block; animation: fadeIn 0.4s ease-out; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 32px;
-            color: #5a4e4a; /* Мягкий коричнево-серый вместо черного */
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .field { margin-bottom: 20px; }
-
-        label {
-            display: block;
-            font-size: 13px;
-            color: #8c7a74; /* Пастельный серо-коричневый */
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 15px;
-            /* Очень светлый персиковый фон для инпутов */
-            border: 1.5px solid #f0e6de; 
-            border-radius: 14px;
-            outline: none;
-            transition: all 0.3s ease;
-            background: #faf6f3;
-            color: #5a4e4a;
-        }
-
-        input:focus { 
-            /* При фокусе - нежный розовый */
-            border-color: #f2b8b5; 
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(242, 184, 181, 0.2); 
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
-            /* Уютный пыльно-розовый цвет кнопки */
-            background: #e8a09f; 
-            border: none;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 12px;
-            box-shadow: 0 4px 12px rgba(232, 160, 159, 0.25);
-        }
-
-        button:hover { 
-            background: #d98d8c; 
-            transform: translateY(-1px); 
-            box-shadow: 0 6px 16px rgba(232, 160, 159, 0.35);
-        }
-        
-        button:disabled { 
-            background: #e6e0dc; 
-            color: #a89f9b;
-            box-shadow: none;
-            cursor: not-allowed; 
-            transform: none; 
-        }
-
-        .switch {
-            text-align: center;
-            margin-top: 24px;
-            font-size: 14px;
-            color: #9c8c86;
-        }
-
-        .switch a {
-            color: #d98d8c; /* Ссылка в тон кнопке */
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .switch a:hover { text-decoration: underline; }
-
-        .message {
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-        }
-
-        .message.error {
-            background: #fff0f0;
-            color: #e05e5e;
-            display: block;
-        }
-
-        .message.success {
-            /* Нежный мятный цвет для успеха */
-            background: #f0faeb; 
-            color: #5ba04e;
-            display: block;
-        }
-    </style>
+        <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -195,7 +57,7 @@
     </div>
 </div>
 
-<script src="/app.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
