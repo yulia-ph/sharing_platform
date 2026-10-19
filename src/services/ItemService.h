@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "BookingRepository.h"
+#include "Database.h"
 #include "DateUtils.h"
 #include "Entities.h"
 #include "Enums.h"
@@ -15,8 +16,8 @@ namespace share {
 
 class ItemService {
    public:
-    explicit ItemService(ItemRepository& items, BookingRepository& bookings)
-        : items_(items), bookings_(bookings) {}
+    explicit ItemService(ItemRepository& items, BookingRepository& bookings, Database& db)
+        : items_(items), bookings_(bookings), db_(db) {}
 
     std::vector<ItemShort> findUserItems(int userId);
     std::optional<Item> findItemInfo(int itemId);
@@ -31,5 +32,6 @@ class ItemService {
    private:
     ItemRepository& items_;
     BookingRepository& bookings_;
+    Database& db_;
 };
 }  // namespace share
