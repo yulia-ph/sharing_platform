@@ -64,4 +64,14 @@ ItemCategory itemCategoryFromString(const std::string& s) {
     throw std::runtime_error("Undefined category: " + s);
 }
 
+std::vector<ItemCategory> allCategories() {
+    std::vector<ItemCategory> result;
+
+    for (int i = static_cast<int>(ItemCategory::Electronics);
+         i <= static_cast<int>(ItemCategory::Other); ++i) {
+        result.push_back(static_cast<ItemCategory>(i));
+    }
+    return result;
+}
+
 }  // namespace share

@@ -7,17 +7,9 @@
 #include <random>
 #include <sstream>
 
-namespace share {
+#include "AuthService.h"
 
-static std::string generateSessionId() {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<> dis(0, 15);
-    const char* hex = "0123456789abcdef";
-    std::string id;
-    for (int i = 0; i < 32; ++i) id += hex[dis(gen)];
-    return id;
-}
+namespace share {
 
 static std::string readFile(const std::string& path) {
     std::ifstream f(path);
@@ -25,6 +17,21 @@ static std::string readFile(const std::string& path) {
     std::stringstream buf;
     buf << f.rdbuf();
     return buf.str();
+}
+
+static std::string getCookie(const httplib::Request& req, const std::string& name) {
+    if (!req.has_header("Cookie")) return "";
+
+    std::string cookies = req.get_header_value("Cookie");
+    std::string prefix = name + "=";
+
+    size_t pos = cookies.find(prefix);
+    if (pos == std::string::npos) return "";
+
+    pos += prefix.size();
+    size_t end = cookies.find(';', pos);
+    if (end == std::string::npos) return cookies.substr(pos);
+    return cookies.substr(pos, end - pos);
 }
 
 HttpServer::HttpServer(AuthService& auth) : auth_(auth) {}
@@ -77,8 +84,9 @@ void HttpServer::handleLogin(const std::string& body, std::string& outBody, int&
         return;
     }
 
-    std::string sessionId = generateSessionId();
-    sessions_[sessionId] = *userId;
+    std::string sessionId = auth_.createSession(*userId);
+
+    outSetCookie = "sessionId=" + sessionId + "; Path=/; HttpOnly";
 
     outSetCookie = "sessionId=" + sessionId + "; Path=/; HttpOnly";
 
@@ -143,6 +151,15 @@ void HttpServer::run(int port) {
             res.set_header("Set-Cookie", setCookie);
         }
         res.set_content(body, contentType);
+    });
+
+    svr.Post("/api/logout", [this](const auto& req, auto& res) {
+        std::string sessionId = getCookie(req, "sessionId");
+
+        auth_.logoutUser(sessionId);
+
+        res.set_header("Set-Cookie", "sessionId=; Path=/; HttpOnly; Max-Age=0");
+        res.set_content(R"({"ok":true})", "application/json");
     });
 
     svr.listen("localhost", port);

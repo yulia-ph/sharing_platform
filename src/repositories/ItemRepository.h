@@ -14,8 +14,8 @@ class ItemRepository {
     std::vector<ItemShort> findItemByUserId(int userId);
     std::optional<Item> findItemById(int itemId);
     int insertItem(const Item& item);
-    int editItem(int itemId, const Item& newItem);
-    int deleteItem(int itemId);
+    bool editItem(int itemId, const Item& newItem);
+    bool deleteItem(int itemId);
 
    private:
     Database& db_;

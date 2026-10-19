@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace share {
 
@@ -25,5 +26,7 @@ enum class ItemCategory {
 std::string itemCategoryToString(ItemCategory category);
 
 ItemCategory itemCategoryFromString(const std::string& s);
+
+std::vector<ItemCategory> allCategories();
 
 }  // namespace share

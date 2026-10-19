@@ -5,7 +5,9 @@
 #include <vector>
 
 #include "BookingRepository.h"
+#include "DateUtils.h"
 #include "Entities.h"
+#include "Enums.h"
 #include "ItemRepository.h"
 #include "Result.h"
 
@@ -22,9 +24,9 @@ class ItemService {
     std::vector<std::string> getCategories();
     Result addItem(int ownerId, const std::string& title, const std::string& description,
                    const std::string& category);
-    Result editItem(int itemId, const std::string& title, const std::string& description,
-                    const std::string& category);
-    Result deleteItem(int itemId);
+    Result editItem(int userId, int itemId, const std::string& title,
+                    const std::string& description, const std::string& category);
+    Result deleteItem(int userId, int itemId);
 
    private:
     ItemRepository& items_;

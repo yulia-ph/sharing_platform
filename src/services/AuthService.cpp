@@ -1,6 +1,18 @@
 #include "AuthService.h"
 
+#include <random>
+
 namespace share {
+
+static std::string generateSessionId() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<> dis(0, 15);
+    const char* hex = "0123456789abcdef";
+    std::string id;
+    for (int i = 0; i < 32; ++i) id += hex[dis(gen)];
+    return id;
+}
 
 Result AuthService::registerUser(const std::string& username, const std::string& password,
                                  const std::string& passwordDouble) {
@@ -44,6 +56,16 @@ std::optional<int> AuthService::login(const std::string& username, const std::st
     }
 
     return user->id;
+}
+
+std::string AuthService::createSession(int userId) {
+    std::string sessionId = generateSessionId();
+    sessions_[sessionId] = userId;
+    return sessionId;
+}
+
+void AuthService::logoutUser(const std::string& sessionId) {
+    sessions_.erase(sessionId);
 }
 
 }  // namespace share

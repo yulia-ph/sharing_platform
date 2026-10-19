@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cctype>
+#include <map>
 #include <optional>
 
 #include "Entities.h"
@@ -17,9 +18,11 @@ class AuthService {
     Result registerUser(const std::string& username, const std::string& password,
                         const std::string& passwordDouble);
     std::optional<int> login(const std::string& username, const std::string& password);
-    Result logoutUser(int id);
+    void logoutUser(const std::string& sessionId);
+    std::string createSession(int userId);
 
    private:
     UserRepository& users_;
+    std::map<std::string, int> sessions_;
 };
 }  // namespace share

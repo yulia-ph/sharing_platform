@@ -36,6 +36,8 @@
 | Определить интерфейсы для ItemRepository| arin-aa, yulia-ph | ✅ Готово|
 | Реализовать первоначальную проверку ввода| daradoroncova1-debug|✅ Готово|
 | Реализовать ItemService| yulia-ph | -|
+| Согласовать эндпоинты| yulia-ph, daradoroncova1-debug | -|
+| Реализовать функционал сервера для объявлений| yulia-ph | -|
 | Реализовать ItemRepository| arin-aa| -|
 | Реализовать страницу объявлений|daradoroncova1-debug| -|
 | | |

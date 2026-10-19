@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <string>
 
 #include "AuthService.h"
@@ -15,8 +14,6 @@ class HttpServer {
 
    private:
     AuthService& auth_;
-
-    std::map<std::string, int> sessions_;
 
     void handleRegister(const std::string& body, std::string& outBody, int& outStatus,
                         std::string& outContentType);
