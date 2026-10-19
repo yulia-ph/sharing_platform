@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 4.0)
-project(sharing_platform CXX)
+cmake_minimum_required(VERSION 3.20)
+project(sharing_platform LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -44,6 +44,10 @@ target_include_directories(sharing_platform PRIVATE
 )
 
 target_link_directories(sharing_platform PRIVATE ${SODIUM_LIBRARY_DIRS})
+
+if(NOT TARGET SQLite3::SQLite3)
+    add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+endif()
 
 target_link_libraries(sharing_platform PRIVATE
     SQLite3::SQLite3

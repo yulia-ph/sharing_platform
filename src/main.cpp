@@ -3,8 +3,8 @@
 #include "AuthService.h"
 #include "Database.h"
 #include "HttpServer.h"
+#include "ItemService.h"
 #include "Migrations.h"
-#include "UserRepository.h"
 
 int main() {
     using namespace share;
@@ -13,7 +13,10 @@ int main() {
         Database db("shared.db");
         runMigrations(db);
         UserRepository users(db);
+        BookingRepository bookingsRepo(db);
+        ItemRepository itemsRepo(db);
         AuthService auth(users);
+        ItemService items(itemsRepo, bookingsRepo);
 
         HttpServer server(auth);
         server.run(8080);
