@@ -30,11 +30,12 @@
 | Хеширование пароля| daradoroncova1-debug|✅ Готово|
 | Сервер для входа| yulia-ph|✅ Готово|
 | Определить эндпоинты для входа| yulia-ph, daradoroncova1-debug|✅ Готово|
-| Реализовать страницу входа| daradoroncova1-debug|-|
-| Прописать js для страницы входа| daradoroncova1-debug|-|
+| Реализовать страницу входа| daradoroncova1-debug|✅ Готово|
+| Прописать js для страницы входа| daradoroncova1-debug|✅ Готово|
 | Определить интерфейсы для ItemService| arin-aa, yulia-ph | ✅ Готово|
-| Реализовать ItemService| yulia-ph | -|
 | Определить интерфейсы для ItemRepository| arin-aa, yulia-ph | ✅ Готово|
+| Реализовать первоначальную проверку ввода| daradoroncova1-debug|✅ Готово|
+| Реализовать ItemService| yulia-ph | -|
 | Реализовать ItemRepository| arin-aa| -|
-| Реализовать функции первоначальной проверки ввода| daradoroncova1-debug| -|
+| Реализовать страницу объявлений|daradoroncova1-debug| -|
 | | |
