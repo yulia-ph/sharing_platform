@@ -15,8 +15,11 @@ void runMigrations(Database& db) {
             owner_id    INTEGER NOT NULL REFERENCES users(id),
             title       TEXT NOT NULL,
             description TEXT,
-            category    TEXT NOT NULL DEFAULT 'other',
-            created_at  TEXT NOT NULL DEFAULT (date('now')),
+            category    TEXT NOT NULL DEFAULT 'other'
+            CHECK (category IN (
+            'electronics', 'toys', 'for kitchen', 'sports', 'books', 'leisure', 'tools', 'services', 'other'
+            )),
+            created_at  TEXT NOT NULL DEFAULT CURRENT_DATE,
             is_deleted  INTEGER NOT NULL DEFAULT 0
         );
 
@@ -24,13 +27,12 @@ void runMigrations(Database& db) {
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             item_id     INTEGER NOT NULL REFERENCES items(id),
             borrower_id INTEGER NOT NULL REFERENCES users(id),
-            owner_id    INTEGER NOT NULL REFERENCES users(id),
             start_date  TEXT NOT NULL,
             end_date    TEXT NOT NULL,
             status      TEXT NOT NULL DEFAULT 'reserved'
-                CHECK (status IN ('reserved','active','returned','cancelled')),
+                CHECK (status IN ('reserved','active','returned','cancelled','overdue')),
             returned_at TEXT,
-            created_at  TEXT NOT NULL DEFAULT (date('now')),
+            created_at  TEXT NOT NULL DEFAULT CURRENT_DATE,
             CHECK (start_date <= end_date)
         );
 
