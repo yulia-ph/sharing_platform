@@ -35,9 +35,16 @@
 | Определить интерфейсы для ItemService| arin-aa, yulia-ph | ✅ Готово|
 | Определить интерфейсы для ItemRepository| arin-aa, yulia-ph | ✅ Готово|
 | Реализовать первоначальную проверку ввода| daradoroncova1-debug|✅ Готово|
-| Реализовать ItemService| yulia-ph | -|
-| Согласовать эндпоинты| yulia-ph, daradoroncova1-debug | -|
-| Реализовать функционал сервера для объявлений| yulia-ph | -|
+| Реализовать ItemService| yulia-ph | ✅ Готово|
+| Согласовать эндпоинты| yulia-ph, daradoroncova1-debug | ✅ Готово|
+| Реализовать функционал сервера для объявлений| yulia-ph | ✅ Готово|
 | Реализовать ItemRepository| arin-aa| -|
+| Реализовать первичный BookingRepository| arin-aa| -|
 | Реализовать страницу объявлений|daradoroncova1-debug| -|
+| Определить интерфейсы для BookingService для броней| arin-aa, yulia-ph | -|
+| Определить интерфейсы для BookingRepository для броней| arin-aa, yulia-ph | -|
+| Реализовать BookingServiceдля броней| yulia-ph | -|
+| Реализовать страницу броней|daradoroncova1-debug| -|
+| Соглавовать работу над поиском| arin-aa, yulia-ph, daradoroncova1-debug | -|
+| Соглавовать функционал главной страницы| arin-aa, yulia-ph, daradoroncova1-debug | -|
 | | |

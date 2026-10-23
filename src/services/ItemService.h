@@ -21,12 +21,13 @@ class ItemService {
 
     std::vector<ItemShort> findUserItems(int userId);
     std::optional<Item> findItemInfo(int itemId);
-    std::vector<BookingShort> findBookingsOfItem(int itemId);
     std::vector<std::string> getCategories();
+    std::string availability(int itemId);
     Result addItem(int ownerId, const std::string& title, const std::string& description,
-                   const std::string& category);
+                   const std::string& category, const std::string& city);
     Result editItem(int userId, int itemId, const std::string& title,
-                    const std::string& description, const std::string& category);
+                    const std::string& description, const std::string& category,
+                    const std::string& city);
     Result deleteItem(int userId, int itemId);
 
    private:

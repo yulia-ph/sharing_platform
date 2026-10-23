@@ -68,4 +68,11 @@ void AuthService::logoutUser(const std::string& sessionId) {
     sessions_.erase(sessionId);
 }
 
+std::optional<int> AuthService::userIdBySession(const std::string& sessionId) const {
+    if (sessionId.empty()) return std::nullopt;
+    auto it = sessions_.find(sessionId);
+    if (it == sessions_.end()) return std::nullopt;
+    return it->second;
+}
+
 }  // namespace share
