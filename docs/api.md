@@ -67,7 +67,7 @@
 
 **Принимает (JSON):** `{}` (Берет userId из куки)
 
-**Возвращает 200:** `[ { "id": 1, "title": "Молоток", "status": "free" }, { "id": 2, "title": "Книга", "status": "busy" } ]`
+**Возвращает 200:** `[ { "id": 1, "title": "Молоток", "city": "Казань", "status": "free" }, { "id": 2, "title": "Книга", "city": "Москва", "status": "busy" } ]`
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
@@ -79,7 +79,7 @@
 
 **Принимает (Query):** `?id=5` (Берет userId из куки)
 
-**Возвращает 200:** `{ "id": 5, "title": "Книга", "description": "Интересная", "category": "books", "status": "free" }`
+**Возвращает 200:** `{ "id": 5, "title": "Книга", "description": "Интересная", "category": "books", "city": "Казань", "status": "free" }`
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid item id" }` (если ?id= не передан или не число)
 
@@ -92,7 +92,7 @@
 ## POST /api/items
 Добавить новое объявление.
 
-**Принимает (JSON):** `{ "title": "string", "description": "string", "category": "string" }` (Берет userId из куки)
+**Принимает (JSON):** `{ "title": "string", "description": "string", "category": "string", "city": "string" }` (Берет userId из куки)
 
 **Возвращает 200:** `{ "ok": true, "id": 42 }`
 
@@ -102,6 +102,8 @@
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid category" }`
 
+**Возвращает 400:** `{ "ok": false, "message": "City cannot be empty" }`
+
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
 **Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
@@ -110,13 +112,15 @@
 ## PUT /api/items
 Обновить существующее объявление.
 
-**Принимает (JSON):** `{ "id": 42, "title": "string", "description": "string", "category": "string" }` (Берет userId из куки)
+**Принимает (JSON):** `{ "id": 42, "title": "string", "description": "string", "category": "string", "city": "string" }` (Берет userId из куки)
 
 **Возвращает 200:** `{ "ok": true }`
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid JSON" }`
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid category" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "City cannot be empty" }`
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
@@ -164,8 +168,173 @@
 
 **Принимает (JSON):** `{}`
 
-**Возвращает 200:** `[ "electronics", "toys", "books", "tools", "other" ]`
+**Возвращает 200:** `[ "electronics", "toys", "for kitchen", "sports", "books", "leisure", "tools", "services", "other" ]`
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+# Слой главной, поиска и моих броней
+
+Город хранится у предмета как текст. При сохранении обрезаются пробелы по краям. Сравнение в поиске без учёта регистра, поэтому «Казань» и «казань» — один город.
+
+Статус `active` сам не выставляется. Его ставит заёмщик кнопкой «Забрал». Статус `returned` ставит заёмщик кнопкой «Вернул». Автоматически сервер меняет только просрочку.
+
+Перед ответом `GET /api/home` и `GET /api/my-bookings` сервер переводит в `overdue` брони, у которых `endDate` меньше сегодняшней даты и статус `reserved` или `active`. В ограничении таблицы `bookings.status` должно быть разрешено значение `overdue`.
+
+Кнопка «Забрал» есть у заёмщика, пока статус `reserved`, сегодня не раньше `startDate` и не позже `endDate`. Кнопка «Вернул» есть у заёмщика, пока статус `active` или `overdue`. У владельца кнопок нет: он только видит, что вещь сегодня забирают или возвращают.
+
+## GET /api/home
+Главная после входа: числа по сайту и сегодняшние дела.
+
+**Принимает:** userId из куки
+
+**Возвращает 200:**
+```
+{
+  "stats": { "users": 12, "items": 40, "bookings": 15 },
+  "today": [
+    { "bookingId": 1, "itemId": 5, "title": "Молоток", "city": "Казань", "role": "borrower", "kind": "pickup", "otherUsername": "anna", "canAct": true },
+    { "bookingId": 2, "itemId": 6, "title": "Книга", "city": "Казань", "role": "borrower", "kind": "return", "otherUsername": "anna", "canAct": true },
+    { "bookingId": 3, "itemId": 7, "title": "Палатка", "city": "Москва", "role": "owner", "kind": "pickup", "otherUsername": "ivan", "canAct": false }
+  ]
+}
+```
+
+`stats.users` — все пользователи. `stats.items` — предметы с `is_deleted = 0`. `stats.bookings` — все брони.
+
+`today` — брони, у которых сегодня `startDate` (`kind` = `pickup`, статус ещё `reserved`) или сегодня `endDate` (`kind` = `return`, статус `active`). `role` = `borrower`, если текущий пользователь берёт вещь, и `owner`, если вещь его. `otherUsername` — второй участник. `canAct` истинно только у заёмщика: по этому полю главная показывает кнопку «Забрал» или «Вернул».
+
+Сюда же, даже если дата конца уже прошла, попадают просроченные брони заёмщика со статусом `overdue` и `kind` = `return`, чтобы с главной можно было нажать «Вернул».
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## GET /api/cities
+Города для выпадающего списка в поиске. Берутся из неудалённых предметов, без учёта регистра каждый город один раз.
+
+**Принимает:** userId из куки
+
+**Возвращает 200:** `[ "Казань", "Москва" ]`
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## GET /api/search?city=Казань&category=tools
+Поиск вещей других людей. Оба параметра необязательны. Пустой запрос возвращает все неудалённые чужие предметы. Свои предметы в выдачу не входят.
+
+**Принимает (Query):** `city`, `category` (Берет userId из куки)
+
+**Возвращает 200:** `[ { "id": 5, "title": "Молоток", "category": "tools", "city": "Казань", "status": "free" } ]`
+
+`status` = `busy`, если у предмета есть бронь со статусом `reserved`, `active` или `overdue`. Иначе `free`. Занятую вещь видно, но создать пересекающуюся бронь нельзя.
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid category" }`
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## GET /api/my-bookings
+Все брони, где текущий пользователь заёмщик или владелец. Здесь те же кнопки, что на главной, но список не ограничен сегодняшним днём.
+
+**Принимает:** userId из куки
+
+**Возвращает 200:**
+```
+[
+  {
+    "id": 1,
+    "itemId": 5,
+    "title": "Молоток",
+    "city": "Казань",
+    "role": "borrower",
+    "otherUsername": "anna",
+    "startDate": "2026-10-23",
+    "endDate": "2026-10-25",
+    "status": "reserved",
+    "canPickup": true,
+    "canReturn": false
+  }
+]
+```
+
+`canPickup` и `canReturn` сервер считает сам. Клиент показывает кнопки только по этим полям.
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## POST /api/bookings
+Забронировать чужой предмет. Статус новой брони всегда `reserved`.
+
+**Принимает (JSON):** `{ "itemId": 5, "startDate": "2026-10-23", "endDate": "2026-10-25" }` (Берет userId из куки)
+
+**Возвращает 200:** `{ "ok": true, "id": 7 }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid JSON" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid item id" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid date" }` (дата не в формате `YYYY-MM-DD` или `startDate` позже `endDate`)
+
+**Возвращает 400:** `{ "ok": false, "message": "You cannot book your own item" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "These dates are busy" }` (пересечение с бронью `reserved`, `active` или `overdue`)
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 404:** `{ "ok": false, "message": "Item not found" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## POST /api/bookings/pickup
+Заёмщик забрал вещь. Статус `reserved` становится `active`.
+
+**Принимает (JSON):** `{ "id": 1 }` (Берет userId из куки)
+
+**Возвращает 200:** `{ "ok": true }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid JSON" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid booking id" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be picked up" }` (статус не `reserved`, сегодня раньше `startDate` или бронь уже просрочена)
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 403:** `{ "ok": false, "message": "You don't have access to this booking" }`
+
+**Возвращает 404:** `{ "ok": false, "message": "Booking not found" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## POST /api/bookings/return
+Заёмщик вернул вещь. Статус `active` или `overdue` становится `returned`, в `returnedAt` пишется сегодняшняя дата.
+
+**Принимает (JSON):** `{ "id": 1 }` (Берет userId из куки)
+
+**Возвращает 200:** `{ "ok": true }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid JSON" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid booking id" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be returned" }` (статус не `active` и не `overdue`)
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 403:** `{ "ok": false, "message": "You don't have access to this booking" }`
+
+**Возвращает 404:** `{ "ok": false, "message": "Booking not found" }`
 
 **Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`

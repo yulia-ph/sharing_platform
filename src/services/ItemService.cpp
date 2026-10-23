@@ -1,6 +1,25 @@
 #include "ItemService.h"
 
+#include <cctype>
+
 namespace share {
+
+static std::string trim(const std::string& value) {
+    size_t start = 0;
+    while (start < value.size() && std::isspace(static_cast<unsigned char>(value[start]))) {
+        ++start;
+    }
+    size_t end = value.size();
+    while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1]))) {
+        --end;
+    }
+    return value.substr(start, end - start);
+}
+
+static std::string validateCity(const std::string& city) {
+    if (trim(city).empty()) return "City cannot be empty";
+    return "";
+}
 
 std::vector<ItemShort> ItemService::findUserItems(int userId) {
     if (userId <= 0) {
@@ -18,26 +37,26 @@ std::optional<Item> ItemService::findItemInfo(int itemId) {
     return items_.findItemById(itemId);
 }
 
-std::vector<BookingShort> ItemService::findBookingsOfItem(int itemId) {
-    if (itemId <= 0) {
-        return {};
+std::vector<std::string> ItemService::getCategories() {
+    std::vector<std::string> names;
+    for (ItemCategory category : allCategories()) {
+        names.push_back(itemCategoryToString(category));
     }
-
-    return bookings_.findShortBookingsByItemId(itemId);
+    return names;
 }
 
-std::vector<std::string> ItemService::getCategories() {
-    std::vector<std::string> result;
-
-    for (auto category : allCategories()) {
-        result.push_back(itemCategoryToString(category));
+std::string ItemService::availability(int itemId) {
+    for (const BookingShort& booking : bookings_.findShortBookingsByItemId(itemId)) {
+        if (booking.status == BookingStatus::Reserved || booking.status == BookingStatus::Active ||
+            booking.status == BookingStatus::Overdue) {
+            return "busy";
+        }
     }
-
-    return result;
+    return "free";
 }
 
 Result ItemService::addItem(int ownerId, const std::string& title, const std::string& description,
-                            const std::string& category) {
+                            const std::string& category, const std::string& city) {
     if (ownerId <= 0) {
         return Result::error("Invalid owner id");
     }
@@ -56,6 +75,8 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     if (title.size() > 100) {
         return Result::error("Title is too long (max 100 characters)");
     }
+    std::string cityError = validateCity(city);
+    if (!cityError.empty()) return Result::error(cityError);
 
     Item item;
     item.ownerId = ownerId;
@@ -63,6 +84,7 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     item.description = description;
     item.createdAt = today();
     item.category = cat;
+    item.city = trim(city);
 
     item.id = items_.insertItem(item);
 
@@ -70,18 +92,19 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
         return Result::error("Database error");
     }
 
-    return Result::success();
+    return Result::success(item.id);
 }
 
 Result ItemService::editItem(int userId, int itemId, const std::string& title,
-                             const std::string& description, const std::string& category) {
+                             const std::string& description, const std::string& category,
+                             const std::string& city) {
     if (itemId <= 0) {
         return Result::error("Invalid item id");
     }
 
     auto item = items_.findItemById(itemId);
-    if (!item) {
-        return Result::error("This item does not exist");
+    if (!item || item->isDeleted) {
+        return Result::error("Item not found");
     }
     if (item->ownerId != userId) {
         return Result::error("You don't have access to this item");
@@ -101,10 +124,13 @@ Result ItemService::editItem(int userId, int itemId, const std::string& title,
     if (title.size() > 100) {
         return Result::error("Title is too long (max 100 characters)");
     }
+    std::string cityError = validateCity(city);
+    if (!cityError.empty()) return Result::error(cityError);
 
     item->title = title;
     item->description = description;
     item->category = cat;
+    item->city = trim(city);
 
     if (!items_.editItem(itemId, *item)) {
         return Result::error("Failed to update item");
@@ -119,12 +145,8 @@ Result ItemService::deleteItem(int userId, int itemId) {
     }
 
     auto item = items_.findItemById(itemId);
-    if (!item) {
-        return Result::error("This item does not exist");
-    }
-
-    if (item->isDeleted == true) {
-        return Result::error("Item already deleted");
+    if (!item || item->isDeleted) {
+        return Result::error("Item not found");
     }
 
     if (item->ownerId != userId) {
