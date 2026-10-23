@@ -2,6 +2,8 @@
 
 #include <cctype>
 
+#include "BookingState.h"
+
 namespace share {
 
 static std::string trim(const std::string& value) {
@@ -47,10 +49,7 @@ std::vector<std::string> ItemService::getCategories() {
 
 std::string ItemService::availability(int itemId) {
     for (const BookingShort& booking : bookings_.findShortBookingsByItemId(itemId)) {
-        if (booking.status == BookingStatus::Reserved || booking.status == BookingStatus::Active ||
-            booking.status == BookingStatus::Overdue) {
-            return "busy";
-        }
+        if (bookingState(booking.status).isBusy()) return "busy";
     }
     return "free";
 }

@@ -7,9 +7,12 @@ namespace share {
 struct Result {
     bool ok = true;
     std::string message;
+    int id = 0;
 
-    static Result success() {
-        return {true, ""};
+    static Result success(int id = 0) {
+        Result result;
+        result.id = id;
+        return result;
     }
 
     static Result error(const std::string& msg) {
