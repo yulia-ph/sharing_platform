@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "AuthService.h"
+#include "BookingService.h"
 #include "Database.h"
 #include "HttpServer.h"
 #include "ItemService.h"
@@ -17,8 +18,9 @@ int main() {
         ItemRepository itemsRepo(db);
         AuthService auth(users);
         ItemService items(itemsRepo, bookingsRepo, db);
+        BookingService bookings(bookingsRepo, db);
 
-        HttpServer server(auth);
+        HttpServer server(auth, items, bookings);
         server.run(8080);
 
     } catch (const std::exception& e) {

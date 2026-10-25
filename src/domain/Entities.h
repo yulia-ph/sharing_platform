@@ -21,11 +21,13 @@ struct Item {
     std::string createdAt;
     bool isDeleted = false;
     ItemCategory category = ItemCategory::Other;
+    std::string city;
 };
 
 struct ItemShort {
     int id = 0;
     std::string title;
+    std::string city;
 };
 
 struct Booking {
