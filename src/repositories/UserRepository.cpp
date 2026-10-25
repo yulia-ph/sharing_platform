@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "sqliteColumn.h"
+
 namespace share {
 
 std::optional<User> UserRepository::findById(int id) {
@@ -21,9 +23,9 @@ std::optional<User> UserRepository::findById(int id) {
 
     if (stepResult == SQLITE_ROW) {
         User user;
-        user.id = sqlite3_column_int(stmt, 0);
-        user.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        user.passwordHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        user.id = column<int>(stmt, 0);
+        user.username = column<std::string>(stmt, 1);
+        user.passwordHash = column<std::string>(stmt, 2);
         result = user;
     }
 
@@ -49,9 +51,9 @@ std::optional<User> UserRepository::findByUsername(const std::string& username) 
     std::optional<User> result;
     if (stepResult == SQLITE_ROW) {
         User user;
-        user.id = sqlite3_column_int(stmt, 0);
-        user.username = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        user.passwordHash = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        user.id = column<int>(stmt, 0);
+        user.username = column<std::string>(stmt, 1);
+        user.passwordHash = column<std::string>(stmt, 2);
         result = user;
     }
     if (stepResult != SQLITE_ROW && stepResult != SQLITE_DONE) {

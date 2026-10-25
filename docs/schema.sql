@@ -10,6 +10,7 @@ CREATE TABLE items (
     title       TEXT NOT NULL,
     description TEXT,
     category    TEXT NOT NULL DEFAULT 'other',
+    city        TEXT NOT NULL DEFAULT '',
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     is_deleted  INTEGER NOT NULL DEFAULT 0
 );
@@ -18,7 +19,6 @@ CREATE TABLE bookings (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     item_id     INTEGER NOT NULL REFERENCES items(id),
     borrower_id INTEGER NOT NULL REFERENCES users(id),
-    owner_id    INTEGER NOT NULL REFERENCES users(id),
     start_date  TEXT NOT NULL,
     end_date    TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'reserved'

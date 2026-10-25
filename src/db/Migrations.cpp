@@ -1,6 +1,43 @@
 #include "Migrations.h"
 
+#include <sqlite3.h>
+
+#include <string>
+
 namespace share {
+
+static void ensureCityColumn(Database& db) {
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db.handle(), "PRAGMA table_info(items)", -1, &stmt, nullptr) !=
+        SQLITE_OK) {
+        throw std::runtime_error(std::string("Migration error (prepare): ") +
+                                 sqlite3_errmsg(db.handle()));
+    }
+
+    bool hasCity = false;
+    int stepResult;
+
+    while ((stepResult = sqlite3_step(stmt)) == SQLITE_ROW) {
+        std::string colName = column<std::string>(stmt, 1);
+
+        if (colName == "city") {
+            hasCity = true;
+            break;
+        }
+    }
+
+    if (stepResult != SQLITE_DONE && stepResult != SQLITE_ROW) {
+        std::string err = sqlite3_errmsg(db.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("Migration error (step): " + err);
+    }
+
+    sqlite3_finalize(stmt);
+
+    if (!hasCity) {
+        db.exec("ALTER TABLE items ADD COLUMN city TEXT NOT NULL DEFAULT ''");
+    }
+}
 
 void runMigrations(Database& db) {
     db.exec(R"(
@@ -16,6 +53,7 @@ void runMigrations(Database& db) {
             title       TEXT NOT NULL,
             description TEXT,
             category    TEXT NOT NULL DEFAULT 'other',
+            city        TEXT NOT NULL DEFAULT '',
             created_at  TEXT NOT NULL DEFAULT (date('now')),
             is_deleted  INTEGER NOT NULL DEFAULT 0
         );
@@ -24,7 +62,6 @@ void runMigrations(Database& db) {
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             item_id     INTEGER NOT NULL REFERENCES items(id),
             borrower_id INTEGER NOT NULL REFERENCES users(id),
-            owner_id    INTEGER NOT NULL REFERENCES users(id),
             start_date  TEXT NOT NULL,
             end_date    TEXT NOT NULL,
             status      TEXT NOT NULL DEFAULT 'reserved'
@@ -43,6 +80,7 @@ void runMigrations(Database& db) {
         CREATE INDEX IF NOT EXISTS idx_bookings_borrower
             ON bookings(borrower_id);
         )");
+    ensureCityColumn(db);
 }
 
 }  // namespace share

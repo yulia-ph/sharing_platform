@@ -12,7 +12,6 @@ class BookingRepository {
    public:
     explicit BookingRepository(Database& db) : db_(db) {}
     std::vector<BookingShort> findShortBookingsByItemId(int itemId);
-    int updateAllBookingsOfUser(int userId);
     void updateBookingStatus(int bookingId, BookingStatus newStatus);
 
    private:

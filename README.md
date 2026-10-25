@@ -38,13 +38,13 @@
 | Реализовать ItemService| yulia-ph | ✅ Готово|
 | Согласовать эндпоинты| yulia-ph, daradoroncova1-debug | ✅ Готово|
 | Реализовать функционал сервера для объявлений| yulia-ph | ✅ Готово|
-| Реализовать ItemRepository| arin-aa| -|
-| Реализовать первичный BookingRepository| arin-aa| -|
-| Реализовать страницу объявлений|daradoroncova1-debug| -|
+| Реализовать ItemRepository| arin-aa| ✅ Готово|
+| Реализовать первичный BookingRepository| arin-aa| ✅ Готово|
+| Реализовать страницу объявлений| daradoroncova1-debug| -|
 | Определить интерфейсы для BookingService для броней| arin-aa, yulia-ph | -|
 | Определить интерфейсы для BookingRepository для броней| arin-aa, yulia-ph | -|
-| Реализовать BookingServiceдля броней| yulia-ph | -|
-| Реализовать страницу броней|daradoroncova1-debug| -|
+| Реализовать BookingService для броней| yulia-ph | -|
+| Реализовать страницу броней| daradoroncova1-debug| -|
 | Соглавовать работу над поиском| arin-aa, yulia-ph, daradoroncova1-debug | -|
 | Соглавовать функционал главной страницы| arin-aa, yulia-ph, daradoroncova1-debug | -|
 | | |
