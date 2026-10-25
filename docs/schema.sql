@@ -9,11 +9,9 @@ CREATE TABLE items (
     owner_id    INTEGER NOT NULL REFERENCES users(id),
     title       TEXT NOT NULL,
     description TEXT,
-    category    TEXT NOT NULL DEFAULT 'other'
-        CHECK (category IN (
-            'electronics', 'toys', 'for kitchen', 'sports', 'books', 'leisure', 'tools', 'services', 'other'
-        )),
-    created_at  TEXT NOT NULL DEFAULT CURRENT_DATE,
+    category    TEXT NOT NULL DEFAULT 'other',
+    city        TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (date('now')),
     is_deleted  INTEGER NOT NULL DEFAULT 0
 );
 
@@ -24,9 +22,9 @@ CREATE TABLE bookings (
     start_date  TEXT NOT NULL,
     end_date    TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'reserved'
-        CHECK (status IN ('reserved','active','returned','cancelled','overdue')),
+        CHECK (status IN ('reserved','active','returned','cancelled')),
     returned_at TEXT,
-    created_at  TEXT NOT NULL DEFAULT CURRENT_DATE,
+    created_at  TEXT NOT NULL DEFAULT (date('now')),
     CHECK (start_date <= end_date)
 );
 
