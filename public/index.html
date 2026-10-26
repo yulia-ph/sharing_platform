@@ -1,63 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Sharing Platform</title>
-        <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ORCA</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+    //экран регистрации
+    <div id="auth-shell" class="shell">
+        <aside class="brand">
+            <svg class="orca orca-mark" viewBox="0 0 157 183" aria-hidden="true">
+                <defs>
+                    <mask id="orca-mask-auth">
+                        <path fill="white"
+                            d="M 50.4 6.4 L 52.6 6.6 L 55.2 7.2 L 58.2 8.1 L 61.6 9.2 L 65.4 10.8 L 69.1 12.5 L 72.7 14.5 L 76.2 16.8 L 79.8 19.2 L 83.2 22.1 L 86.6 25.2 L 89.9 28.6 L 93.1 32.4 L 96.6 35.4 L 100.4 37.8 L 104.4 39.5 L 108.6 40.5 L 112.8 41.8 L 116.8 43.2 L 120.6 45.0 L 124.4 47.0 L 128.1 49.4 L 131.7 52.1 L 135.2 55.2 L 138.8 58.8 L 141.8 62.3 L 144.4 65.9 L 146.6 69.6 L 148.4 73.4 L 149.6 77.0 L 150.4 80.5 L 150.6 83.9 L 150.4 87.1 L 149.5 90.1 L 148.0 92.9 L 145.9 95.4 L 143.1 97.6 L 140.4 99.5 L 137.8 101.0 L 135.2 102.1 L 132.8 102.9 L 129.8 103.4 L 126.2 103.8 L 122.2 104.0 L 117.8 104.0 L 115.6 103.8 L 115.7 103.4 L 118.1 102.9 L 122.9 102.1 L 127.0 101.1 L 130.5 99.7 L 133.4 98.0 L 135.6 96.0 L 137.2 94.2 L 138.2 92.8 L 138.6 91.5 L 138.4 90.5 L 137.9 89.5 L 137.1 88.5 L 136.1 87.5 L 134.9 86.5 L 132.8 85.6 L 129.9 84.9 L 126.2 84.2 L 121.8 83.8 L 117.9 83.6 L 114.8 83.7 L 112.4 84.1 L 110.6 84.9 L 108.1 86.9 L 104.7 90.3 L 100.5 95.0 L 95.5 101.0 L 91.0 105.8 L 87.0 109.2 L 83.5 111.5 L 80.5 112.5 L 78.2 112.9 L 76.6 112.6 L 75.6 111.8 L 75.4 110.2 L 75.5 108.5 L 76.0 106.5 L 76.9 104.2 L 78.1 101.8 L 79.1 99.1 L 79.9 96.4 L 80.4 93.5 L 80.6 90.5 L 80.6 87.7 L 80.4 85.1 L 79.9 82.6 L 79.1 80.4 L 78.2 78.4 L 77.2 76.6 L 76.1 75.1 L 74.9 73.9 L 73.5 72.8 L 72.0 71.8 L 70.4 70.9 L 68.6 70.1 L 66.4 69.6 L 63.6 69.2 L 60.4 69.0 L 56.6 69.0 L 52.8 69.4 L 48.9 70.1 L 45.0 71.2 L 41.0 72.8 L 37.5 74.4 L 34.5 76.1 L 32.0 78.0 L 30.0 80.0 L 28.1 82.3 L 26.4 84.9 L 24.8 87.9 L 23.2 91.1 L 22.0 94.3 L 21.0 97.4 L 20.2 100.5 L 19.8 103.5 L 19.4 106.6 L 19.3 109.7 L 19.4 112.9 L 19.6 116.1 L 20.0 118.6 L 20.5 120.4 L 21.1 121.4 L 21.9 121.6 L 22.6 121.1 L 23.4 119.7 L 24.1 117.5 L 24.9 114.5 L 25.7 111.8 L 26.6 109.2 L 27.5 107.0 L 28.5 105.0 L 29.5 103.4 L 30.5 102.1 L 31.5 101.2 L 32.5 100.8 L 33.0 101.2 L 33.0 102.6 L 32.5 104.9 L 31.5 108.1 L 30.8 111.4 L 30.2 114.8 L 30.0 118.2 L 30.0 121.8 L 30.1 124.7 L 30.4 127.1 L 30.8 128.9 L 31.2 130.1 L 31.9 131.3 L 32.8 132.4 L 33.9 133.5 L 35.1 134.5 L 36.9 135.4 L 39.1 136.3 L 41.9 137.1 L 45.1 137.9 L 47.9 138.7 L 50.3 139.6 L 52.2 140.5 L 53.8 141.5 L 55.2 142.7 L 56.8 144.1 L 58.2 145.6 L 59.8 147.4 L 61.1 149.2 L 62.2 151.2 L 63.1 153.4 L 63.9 155.6 L 64.3 157.4 L 64.4 158.6 L 64.2 159.4 L 63.8 159.6 L 62.9 159.6 L 61.6 159.2 L 60.0 158.5 L 58.0 157.5 L 55.2 156.6 L 51.6 155.9 L 47.1 155.2 L 41.9 154.8 L 37.6 154.9 L 34.2 155.8 L 31.8 157.4 L 30.2 159.6 L 28.8 161.5 L 27.2 163.0 L 25.8 164.1 L 24.2 164.9 L 22.6 166.1 L 20.7 167.9 L 18.6 170.1 L 16.4 172.9 L 14.4 174.5 L 12.8 175.0 L 11.5 174.4 L 10.5 172.6 L 9.8 170.8 L 9.2 168.9 L 9.0 167.0 L 9.0 165.0 L 9.6 162.2 L 10.9 158.8 L 12.8 154.5 L 15.2 149.5 L 17.1 145.5 L 18.4 142.5 L 19.0 140.5 L 19.0 139.5 L 18.3 137.4 L 16.9 134.1 L 14.9 129.8 L 12.1 124.2 L 9.9 119.3 L 8.3 114.9 L 7.2 111.1 L 6.8 107.9 L 6.4 104.6 L 6.3 101.4 L 6.4 98.1 L 6.6 94.9 L 7.2 91.2 L 8.2 87.2 L 9.6 82.9 L 11.4 78.1 L 13.4 73.7 L 15.6 69.6 L 18.1 65.8 L 20.9 62.2 L 23.8 59.0 L 26.8 56.0 L 29.9 53.2 L 33.1 50.8 L 36.5 48.4 L 40.0 46.3 L 43.6 44.4 L 47.4 42.6 L 50.5 40.9 L 53.0 39.1 L 54.9 37.4 L 56.1 35.6 L 57.1 33.8 L 57.7 31.8 L 58.0 29.6 L 58.0 27.4 L 57.3 24.6 L 55.9 21.4 L 53.9 17.6 L 51.1 13.4 L 49.1 10.1 L 47.7 7.9 L 47.0 6.6 L 47.0 6.4 L 47.6 6.2 L 48.7 6.2 Z" />
+                        <ellipse fill="black" cx="123.5" cy="68.6" rx="9" ry="5.2" transform="rotate(-18 123.5 68.6)" />
+                    </mask>
+                </defs>
+                <rect width="157" height="183" fill="currentColor" mask="url(#orca-mask-auth)" />
+            </svg>
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="screen active">
-    <h1>Log in</h1>
+            <div class="brand-copy">
+                <p class="brand-name">ORCA</p>
+                <p class="brand-share">share</p>
+                <p class="brand-line">Publish a thing. Book it for the days you need.</p>
+            </div>
+        </aside>
 
-    <div id="login-message" class="message"></div>
+        <main class="stage">
+            <div id="login-screen" class="screen active">
+                <h1>Log in</h1>
 
-    <form id="login-form">
-        <div class="field">
-            <label for="login-username">Username</label>
-            <input type="text" id="login-username" autocomplete="username">
-        </div>
-        <div class="field">
-            <label for="login-password">Password</label>
-            <input type="password" id="login-password" autocomplete="current-password">
-        </div>
-        <button type="submit">Log in</button>
-    </form>
+                <div id="login-message" class="message"></div>
 
-    <div class="switch">
-        No account? <a onclick="showRegister()">Register</a>
+                <form id="login-form">
+                    <div class="field">
+                        <label for="login-username">Username</label>
+                        <input type="text" id="login-username" autocomplete="username">
+                    </div>
+                    <div class="field">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" autocomplete="current-password">
+                    </div>
+                    <button type="submit">Log in</button>
+                </form>
+
+                <div class="switch">
+                    No account? <a onclick="showRegister()">Register</a>
+                </div>
+            </div>
+            <div id="register-screen" class="screen">
+                <h1>Register</h1>
+
+                <div id="register-message" class="message"></div>
+
+                <form id="register-form">
+                    <div class="field">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" autocomplete="username">
+                    </div>
+                    <div class="field">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" autocomplete="new-password">
+                    </div>
+                    <div class="field">
+                        <label for="register-password-double">Repeat password</label>
+                        <input type="password" id="register-password-double" autocomplete="new-password">
+                    </div>
+                    <button type="submit">Register</button>
+                </form>
+
+                <div class="switch">
+                    Already have an account? <a onclick="showLogin()">Log in</a>
+                </div>
+            </div>
+        </main>
     </div>
-</div>
 
-<!-- REGISTER SCREEN -->
-<div id="register-screen" class="screen">
-    <h1>Register</h1>
+    //Главный экран после входа
+    <div id="app-screen" class="app">
+        <aside class="side">
+            <div class="side-brand">
+                <svg class="orca side-mark" viewBox="0 0 157 183" aria-hidden="true">
+                    <defs>
+                        <mask id="orca-mask-side">
+                            <path fill="white"
+                                d="M 50.4 6.4 L 52.6 6.6 L 55.2 7.2 L 58.2 8.1 L 61.6 9.2 L 65.4 10.8 L 69.1 12.5 L 72.7 14.5 L 76.2 16.8 L 79.8 19.2 L 83.2 22.1 L 86.6 25.2 L 89.9 28.6 L 93.1 32.4 L 96.6 35.4 L 100.4 37.8 L 104.4 39.5 L 108.6 40.5 L 112.8 41.8 L 116.8 43.2 L 120.6 45.0 L 124.4 47.0 L 128.1 49.4 L 131.7 52.1 L 135.2 55.2 L 138.8 58.8 L 141.8 62.3 L 144.4 65.9 L 146.6 69.6 L 148.4 73.4 L 149.6 77.0 L 150.4 80.5 L 150.6 83.9 L 150.4 87.1 L 149.5 90.1 L 148.0 92.9 L 145.9 95.4 L 143.1 97.6 L 140.4 99.5 L 137.8 101.0 L 135.2 102.1 L 132.8 102.9 L 129.8 103.4 L 126.2 103.8 L 122.2 104.0 L 117.8 104.0 L 115.6 103.8 L 115.7 103.4 L 118.1 102.9 L 122.9 102.1 L 127.0 101.1 L 130.5 99.7 L 133.4 98.0 L 135.6 96.0 L 137.2 94.2 L 138.2 92.8 L 138.6 91.5 L 138.4 90.5 L 137.9 89.5 L 137.1 88.5 L 136.1 87.5 L 134.9 86.5 L 132.8 85.6 L 129.9 84.9 L 126.2 84.2 L 121.8 83.8 L 117.9 83.6 L 114.8 83.7 L 112.4 84.1 L 110.6 84.9 L 108.1 86.9 L 104.7 90.3 L 100.5 95.0 L 95.5 101.0 L 91.0 105.8 L 87.0 109.2 L 83.5 111.5 L 80.5 112.5 L 78.2 112.9 L 76.6 112.6 L 75.6 111.8 L 75.4 110.2 L 75.5 108.5 L 76.0 106.5 L 76.9 104.2 L 78.1 101.8 L 79.1 99.1 L 79.9 96.4 L 80.4 93.5 L 80.6 90.5 L 80.6 87.7 L 80.4 85.1 L 79.9 82.6 L 79.1 80.4 L 78.2 78.4 L 77.2 76.6 L 76.1 75.1 L 74.9 73.9 L 73.5 72.8 L 72.0 71.8 L 70.4 70.9 L 68.6 70.1 L 66.4 69.6 L 63.6 69.2 L 60.4 69.0 L 56.6 69.0 L 52.8 69.4 L 48.9 70.1 L 45.0 71.2 L 41.0 72.8 L 37.5 74.4 L 34.5 76.1 L 32.0 78.0 L 30.0 80.0 L 28.1 82.3 L 26.4 84.9 L 24.8 87.9 L 23.2 91.1 L 22.0 94.3 L 21.0 97.4 L 20.2 100.5 L 19.8 103.5 L 19.4 106.6 L 19.3 109.7 L 19.4 112.9 L 19.6 116.1 L 20.0 118.6 L 20.5 120.4 L 21.1 121.4 L 21.9 121.6 L 22.6 121.1 L 23.4 119.7 L 24.1 117.5 L 24.9 114.5 L 25.7 111.8 L 26.6 109.2 L 27.5 107.0 L 28.5 105.0 L 29.5 103.4 L 30.5 102.1 L 31.5 101.2 L 32.5 100.8 L 33.0 101.2 L 33.0 102.6 L 32.5 104.9 L 31.5 108.1 L 30.8 111.4 L 30.2 114.8 L 30.0 118.2 L 30.0 121.8 L 30.1 124.7 L 30.4 127.1 L 30.8 128.9 L 31.2 130.1 L 31.9 131.3 L 32.8 132.4 L 33.9 133.5 L 35.1 134.5 L 36.9 135.4 L 39.1 136.3 L 41.9 137.1 L 45.1 137.9 L 47.9 138.7 L 50.3 139.6 L 52.2 140.5 L 53.8 141.5 L 55.2 142.7 L 56.8 144.1 L 58.2 145.6 L 59.8 147.4 L 61.1 149.2 L 62.2 151.2 L 63.1 153.4 L 63.9 155.6 L 64.3 157.4 L 64.4 158.6 L 64.2 159.4 L 63.8 159.6 L 62.9 159.6 L 61.6 159.2 L 60.0 158.5 L 58.0 157.5 L 55.2 156.6 L 51.6 155.9 L 47.1 155.2 L 41.9 154.8 L 37.6 154.9 L 34.2 155.8 L 31.8 157.4 L 30.2 159.6 L 28.8 161.5 L 27.2 163.0 L 25.8 164.1 L 24.2 164.9 L 22.6 166.1 L 20.7 167.9 L 18.6 170.1 L 16.4 172.9 L 14.4 174.5 L 12.8 175.0 L 11.5 174.4 L 10.5 172.6 L 9.8 170.8 L 9.2 168.9 L 9.0 167.0 L 9.0 165.0 L 9.6 162.2 L 10.9 158.8 L 12.8 154.5 L 15.2 149.5 L 17.1 145.5 L 18.4 142.5 L 19.0 140.5 L 19.0 139.5 L 18.3 137.4 L 16.9 134.1 L 14.9 129.8 L 12.1 124.2 L 9.9 119.3 L 8.3 114.9 L 7.2 111.1 L 6.8 107.9 L 6.4 104.6 L 6.3 101.4 L 6.4 98.1 L 6.6 94.9 L 7.2 91.2 L 8.2 87.2 L 9.6 82.9 L 11.4 78.1 L 13.4 73.7 L 15.6 69.6 L 18.1 65.8 L 20.9 62.2 L 23.8 59.0 L 26.8 56.0 L 29.9 53.2 L 33.1 50.8 L 36.5 48.4 L 40.0 46.3 L 43.6 44.4 L 47.4 42.6 L 50.5 40.9 L 53.0 39.1 L 54.9 37.4 L 56.1 35.6 L 57.1 33.8 L 57.7 31.8 L 58.0 29.6 L 58.0 27.4 L 57.3 24.6 L 55.9 21.4 L 53.9 17.6 L 51.1 13.4 L 49.1 10.1 L 47.7 7.9 L 47.0 6.6 L 47.0 6.4 L 47.6 6.2 L 48.7 6.2 Z" />
+                            <ellipse fill="black" cx="123.5" cy="68.6" rx="9" ry="5.2" transform="rotate(-18 123.5 68.6)" />
+                        </mask>
+                    </defs>
+                    <rect width="157" height="183" fill="currentColor" mask="url(#orca-mask-side)" />
+                </svg>
+                <p class="side-name">ORCA <span>share</span></p>
+            </div>
 
-    <div id="register-message" class="message"></div>
+            <nav class="side-nav">
+                <button type="button" class="nav-btn active" data-page="home">Home</button>
+                <button type="button" class="nav-btn" data-page="items">My items</button>
+                <button type="button" class="nav-btn" data-page="bookings">Bookings</button>
+                <button type="button" class="nav-btn" data-page="search">Search</button>
+            </nav>
 
-    <form id="register-form">
-        <div class="field">
-            <label for="register-username">Username</label>
-            <input type="text" id="register-username" autocomplete="username">
-        </div>
-        <div class="field">
-            <label for="register-password">Password</label>
-            <input type="password" id="register-password" autocomplete="new-password">
-        </div>
-        <div class="field">
-            <label for="register-password-double">Repeat password</label>
-            <input type="password" id="register-password-double" autocomplete="new-password">
-        </div>
-        <button type="submit">Register</button>
-    </form>
+            <button type="button" id="logout-button" class="nav-btn nav-logout">Log out</button>
+        </aside>
 
-    <div class="switch">
-        Already have an account? <a onclick="showLogin()">Log in</a>
+        <main class="app-main">
+            <section id="page-home" class="page active">
+                <p class="eyebrow">Home</p>
+                <h1>Hello, <span id="hello-name"></span></h1>
+                <p class="lead">Share what you have. Book what you need for the days you need it.</p>
+                <div class="doors">
+                    <button type="button" class="door" data-page="items">
+                        <span class="door-title">My items</span>
+                        <span class="door-text">Things you publish, so someone else can book them.</span>
+                    </button>
+                    <button type="button" class="door" data-page="bookings">
+                        <span class="door-title">Bookings</span>
+                        <span class="door-text">Dates when your things are reserved, or you borrowed one.</span>
+                    </button>
+                    <button type="button" class="door" data-page="search">
+                        <span class="door-title">Search</span>
+                        <span class="door-text">Find something to borrow for a few days.</span>
+                    </button>
+                </div>
+            </section>
+
+            <section id="page-items" class="page">
+                <div id="items-list-view">
+                    <div class="page-head">
+                        <div>
+                            <p class="eyebrow">My items</p>
+                            <h1>Your things</h1>
+                        </div>
+                        <button type="button" id="new-item-button" class="solid-btn">New item</button>
+                    </div>
+                    <p class="lead">Publish a thing, open it for the full description, then edit or remove it.</p>
+                    <div id="items-message" class="message"></div>
+                    <div id="item-list" class="item-list"></div>
+                </div>
+
+                <form id="item-form" hidden>
+                    <button type="button" id="item-form-back" class="back-btn">Back to my items</button>
+                    <p class="eyebrow">My items</p>
+                    <h1 id="item-form-heading">New item</h1>
+                    <div id="item-form-message" class="message"></div>
+                    <div class="field">
+                        <label for="item-title">Title</label>
+                        <input type="text" id="item-title" maxlength="100" autocomplete="off">
+                    </div>
+                    <div class="field">
+                        <label for="item-description">Description</label>
+                        <textarea id="item-description" rows="4"></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="item-category">Category</label>
+                        <select id="item-category"></select>
+                    </div>
+                    <div class="field">
+                        <label for="item-city">City</label>
+                        <input type="text" id="item-city" autocomplete="off">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="solid-btn">Save</button>
+                        <button type="button" id="item-form-cancel" class="ghost-btn">Cancel</button>
+                    </div>
+                </form>
+
+                <div id="items-detail-view" hidden>
+                    <button type="button" id="item-back" class="back-btn">Back to my items</button>
+                    <p class="eyebrow">Item</p>
+                    <div class="detail-head">
+                        <h1 id="item-detail-title"></h1>
+                        <span id="item-detail-status" class="pill"></span>
+                    </div>
+                    <dl class="detail-facts">
+                        <div>
+                            <dt>City</dt>
+                            <dd id="item-detail-city"></dd>
+                        </div>
+                        <div>
+                            <dt>Category</dt>
+                            <dd id="item-detail-category"></dd>
+                        </div>
+                    </dl>
+                    <p id="item-detail-description" class="detail-description"></p>
+                    <div id="item-detail-message" class="message"></div>
+                    <div class="form-actions detail-actions">
+                        <button type="button" id="item-edit" class="solid-btn">Edit</button>
+                        <button type="button" id="item-delete" class="danger-btn">Delete</button>
+                    </div>
+                    <h2>Bookings</h2>
+                    <div id="item-detail-bookings"></div>
+                </div>
+            </section>
+
+            <section id="page-bookings" class="page">
+                <p class="eyebrow">Bookings</p>
+                <h1>Dates</h1>
+                <p class="lead">Reservations will show up here, once booking is connected.</p>
+            </section>
+
+            <section id="page-search" class="page">
+                <p class="eyebrow">Search</p>
+                <h1>Find a thing</h1>
+                <p class="lead">Search across what other people have shared is the next piece.</p>
+            </section>
+        </main>
     </div>
-</div>
+    
+    //всплывающее окно для подтверждения удаления вещи 
+    <div id="item-delete-dialog" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="item-delete-heading">
+            <h2 id="item-delete-heading">Delete this item?</h2>
+            <p id="item-delete-name"></p>
+            <div id="item-delete-message" class="message"></div>
+            <div class="form-actions">
+                <button type="button" id="item-delete-yes" class="danger-btn">Delete</button>
+                <button type="button" id="item-delete-no" class="ghost-btn">Keep</button>
+            </div>
+        </div>
+    </div>
 
-<script src="app.js"></script>
-
+    <script src="app.js"></script>
 </body>
+
 </html>
