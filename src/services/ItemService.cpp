@@ -1,6 +1,7 @@
 #include "ItemService.h"
 
 #include <cctype>
+#include <stdexcept>
 
 #include "BookingState.h"
 
@@ -162,9 +163,8 @@ Result ItemService::deleteItem(int userId, int itemId) {
         }
 
         for (BookingShort booking : allBookings) {
-            if (booking.status == BookingStatus::Reserved ||
-                booking.status == BookingStatus::Active) {
-                bookings_.updateBookingStatus(booking.id, BookingStatus::Cancelled);
+            if (booking.status == BookingStatus::Reserved) {
+                bookings_.updateBookingStatus(booking.id, "cancelled");
             }
         }
 

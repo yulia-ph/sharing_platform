@@ -1,6 +1,8 @@
 #include "Migrations.h"
+#include "sqliteColumn.h"
 
 #include <sqlite3.h>
+#include <stdexcept>
 
 #include <string>
 
