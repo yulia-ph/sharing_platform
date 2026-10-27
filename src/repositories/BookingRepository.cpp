@@ -49,7 +49,7 @@ std::vector<BookingShort> BookingRepository::findShortBookingsByItemId(int itemI
     return bookings;
 }
 
-void BookingRepository::updateBookingStatus(int bookingId, BookingStatus newStatus) {
+void BookingRepository::updateBookingStatus(int bookingId, const std::string& status) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "UPDATE bookings SET status = ? WHERE id = ?";
 
@@ -58,7 +58,6 @@ void BookingRepository::updateBookingStatus(int bookingId, BookingStatus newStat
                                  sqlite3_errmsg(db_.handle()));
     }
 
-    std::string status = bookingStatusToString(newStatus);
     sqlite3_bind_text(stmt, 1, status.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 2, bookingId);
 

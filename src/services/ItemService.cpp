@@ -1,6 +1,7 @@
 #include "ItemService.h"
 
 #include <cctype>
+#include <stdexcept>
 
 #include "BookingState.h"
 
@@ -156,15 +157,16 @@ Result ItemService::deleteItem(int userId, int itemId) {
 
     try {
         db_.beginTransaction();
-
         if (!items_.deleteItem(itemId)) {
-            throw std::runtime_error("Failed delete item");
+            throw std::runtime_error("Error while deleting");
         }
 
         for (BookingShort booking : allBookings) {
-            if (booking.status == BookingStatus::Reserved ||
-                booking.status == BookingStatus::Active) {
-                bookings_.updateBookingStatus(booking.id, BookingStatus::Cancelled);
+            if (booking.status == BookingStatus::Active) {
+                throw std::runtime_error("Active bookings detected");
+            }
+            if (booking.status == BookingStatus::Reserved) {
+                bookings_.updateBookingStatus(booking.id, "cancelled");
             }
         }
 

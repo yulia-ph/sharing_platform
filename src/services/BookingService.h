@@ -15,6 +15,9 @@ class BookingService {
         : bookings_(bookings), db_(db_) {}
 
     std::vector<BookingShort> findShortBookingsOfItem(int itemId);
+    std::vector<BookingShort> findShortBookingsOfBorrower(int borrowerId);
+    std::vector<BookingShort> findShortBookingsOfOwner(int ownerId);
+    bool changeBookindStatus(int bookingId, const std::string status);
 
    private:
     BookingRepository& bookings_;
