@@ -157,12 +157,14 @@ Result ItemService::deleteItem(int userId, int itemId) {
 
     try {
         db_.beginTransaction();
-
         if (!items_.deleteItem(itemId)) {
-            throw std::runtime_error("Failed delete item");
+            throw std::runtime_error("Error while deleting");
         }
 
         for (BookingShort booking : allBookings) {
+            if (booking.status == BookingStatus::Active) {
+                throw std::runtime_error("Active bookings detected");
+            }
             if (booking.status == BookingStatus::Reserved) {
                 bookings_.updateBookingStatus(booking.id, "cancelled");
             }
