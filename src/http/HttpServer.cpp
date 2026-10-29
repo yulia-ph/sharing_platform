@@ -14,11 +14,6 @@
 #include <unistd.h>
 #endif
 
-#include "AuthService.h"
-#include "BookingService.h"
-#include "Enums.h"
-#include "ItemService.h"
-
 namespace share {
 
 static std::string getCookie(const httplib::Request& req, const std::string& name) {
@@ -53,11 +48,12 @@ static void sendResult(httplib::Response& res, const Result& result, bool withId
         return;
     }
 
-    if (result.message == "Item not found") {
+    if (result.message == "Item not found" || result.message == "Booking not found") {
         sendError(res, 404, result.message);
         return;
     }
-    if (result.message == "You don't have access to this item") {
+    if (result.message == "You don't have access to this item" ||
+        result.message == "You don't have access to this booking") {
         sendError(res, 403, result.message);
         return;
     }
@@ -66,6 +62,32 @@ static void sendResult(httplib::Response& res, const Result& result, bool withId
         return;
     }
     sendError(res, 400, result.message);
+}
+
+static std::optional<int> bodyBookingId(const httplib::Request& req, httplib::Response& res) {
+    nlohmann::json data;
+    try {
+        data = nlohmann::json::parse(req.body);
+    } catch (...) {
+        sendError(res, 400, "Invalid JSON");
+        return std::nullopt;
+    }
+
+    try {
+        if (!data.contains("bookingId") || !data.at("bookingId").is_number_integer()) {
+            sendError(res, 400, "Invalid booking id");
+            return std::nullopt;
+        }
+        int bookingId = data.at("bookingId").get<int>();
+        if (bookingId <= 0) {
+            sendError(res, 400, "Invalid booking id");
+            return std::nullopt;
+        }
+        return bookingId;
+    } catch (...) {
+        sendError(res, 400, "Invalid booking id");
+        return std::nullopt;
+    }
 }
 
 static std::optional<int> queryId(const httplib::Request& req, const char* name) {
@@ -235,7 +257,6 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/my-items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         nlohmann::json list = nlohmann::json::array();
         for (const ItemShort& item : items_.findUserItems(*userId)) {
@@ -249,7 +270,6 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         auto itemId = queryId(req, "id");
         if (!itemId || *itemId <= 0) {
@@ -274,7 +294,6 @@ void HttpServer::run(int port) {
 
     svr.Post("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         nlohmann::json data;
         try {
@@ -292,7 +311,6 @@ void HttpServer::run(int port) {
 
     svr.Put("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         nlohmann::json data;
         try {
@@ -318,7 +336,6 @@ void HttpServer::run(int port) {
 
     svr.Delete("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         auto itemId = queryId(req, "id");
         if (!itemId || *itemId <= 0) {
@@ -342,7 +359,7 @@ void HttpServer::run(int port) {
         nlohmann::json list = nlohmann::json::array();
         for (const BookingShort& booking : bookings_.findShortBookingsOfItem(*itemId)) {
             list.push_back({{"id", booking.id},
-                            {"borrowerUsername", booking.borrowerUsername},
+                            {"username", booking.username},
                             {"startDate", booking.startDate},
                             {"endDate", booking.endDate},
                             {"status", bookingStatusToString(booking.status)}});
@@ -352,7 +369,6 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/categories", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
-        if (!userId) return;
 
         sendJson(res, 200, nlohmann::json(items_.getCategories()).dump());
     });
@@ -364,6 +380,71 @@ void HttpServer::run(int port) {
 
         res.set_header("Set-Cookie", "sessionId=; Path=/; HttpOnly; Max-Age=0");
         res.set_content(R"({"ok":true})", "application/json");
+    });
+
+    svr.Get("/api/my-bookings", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        nlohmann::json list = nlohmann::json::array();
+        for (const UserBooking& booking : bookings_.findMyBookings(*userId)) {
+            list.push_back({{"bookingId", booking.id},
+                            {"title", booking.title},
+                            {"city", booking.city},
+                            {"username", booking.username},
+                            {"startDate", booking.startDate},
+                            {"endDate", booking.endDate},
+                            {"status", bookingStatusToString(booking.status)},
+                            {"canPickup", booking.canPickup},
+                            {"canReturn", booking.canReturn},
+                            {"canCancel", booking.canCancel}});
+        }
+        sendJson(res, 200, list.dump());
+    });
+
+    svr.Get("/api/incoming-bookings", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        nlohmann::json list = nlohmann::json::array();
+        for (const UserBooking& booking : bookings_.findIncomingBookings(*userId)) {
+            list.push_back({{"bookingId", booking.id},
+                            {"title", booking.title},
+                            {"city", booking.city},
+                            {"username", booking.username},
+                            {"startDate", booking.startDate},
+                            {"endDate", booking.endDate},
+                            {"status", bookingStatusToString(booking.status)},
+                            {"canCancel", booking.canCancel}});
+        }
+        sendJson(res, 200, list.dump());
+    });
+
+    svr.Post("/api/bookings/cancel", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        auto bookingId = bodyBookingId(req, res);
+        if (!bookingId) return;
+        sendResult(res, bookings_.cancel(*userId, *bookingId), false);
+    });
+
+    svr.Post("/api/bookings/return", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        auto bookingId = bodyBookingId(req, res);
+        if (!bookingId) return;
+        sendResult(res, bookings_.returnBooking(*userId, *bookingId), false);
+    });
+
+    svr.Post("/api/bookings/pickup", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        auto bookingId = bodyBookingId(req, res);
+        if (!bookingId) return;
+        sendResult(res, bookings_.pickup(*userId, *bookingId), false);
     });
 
     svr.listen("localhost", port);
