@@ -3,11 +3,11 @@
 #include <string>
 
 #include "AuthService.h"
+#include "BookingService.h"
+#include "Enums.h"
+#include "ItemService.h"
 
 namespace share {
-
-class ItemService;
-class BookingService;
 
 class HttpServer {
    public:
