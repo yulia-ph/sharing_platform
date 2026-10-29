@@ -8,26 +8,76 @@ namespace {
 class ReservedState : public BookingState {
    public:
     bool isBusy() const override { return true; }
+
+    bool canPickup(const std::string& today, const std::string& startDate,
+                   const std::string& endDate) const override {
+        return today >= startDate && today <= endDate;
+    }
+
+    bool canReturn() const override { return false; }
+    bool canCancel() const override { return true; }
+
+    bool becomesOverdue(const std::string& today, const std::string& endDate) const override {
+        return today > endDate;
+    }
 };
 
 class ActiveState : public BookingState {
    public:
     bool isBusy() const override { return true; }
+
+    bool canPickup(const std::string&, const std::string&, const std::string&) const override {
+        return false;
+    }
+
+    bool canReturn() const override { return true; }
+    bool canCancel() const override { return false; }
+
+    bool becomesOverdue(const std::string& today, const std::string& endDate) const override {
+        return today > endDate;
+    }
 };
 
 class OverdueState : public BookingState {
    public:
     bool isBusy() const override { return true; }
+
+    bool canPickup(const std::string&, const std::string&, const std::string&) const override {
+        return false;
+    }
+
+    bool canReturn() const override { return true; }
+    bool canCancel() const override { return false; }
+
+    bool becomesOverdue(const std::string&, const std::string&) const override { return false; }
 };
 
 class ReturnedState : public BookingState {
    public:
     bool isBusy() const override { return false; }
+
+    bool canPickup(const std::string&, const std::string&, const std::string&) const override {
+        return false;
+    }
+
+    bool canReturn() const override { return false; }
+    bool canCancel() const override { return false; }
+
+    bool becomesOverdue(const std::string&, const std::string&) const override { return false; }
 };
 
 class CancelledState : public BookingState {
    public:
     bool isBusy() const override { return false; }
+
+    bool canPickup(const std::string&, const std::string&, const std::string&) const override {
+        return false;
+    }
+
+    bool canReturn() const override { return false; }
+    bool canCancel() const override { return false; }
+
+    bool becomesOverdue(const std::string&, const std::string&) const override { return false; }
 };
 
 }  // namespace

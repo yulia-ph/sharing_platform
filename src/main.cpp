@@ -18,7 +18,7 @@ int main() {
         ItemRepository itemsRepo(db);
         AuthService auth(users);
         ItemService items(itemsRepo, bookingsRepo, db);
-        BookingService bookings(bookingsRepo, db);
+        BookingService bookings(bookingsRepo);
 
         HttpServer server(auth, items, bookings);
         server.run(8080);

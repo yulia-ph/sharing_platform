@@ -22,7 +22,7 @@ CREATE TABLE bookings (
     start_date  TEXT NOT NULL,
     end_date    TEXT NOT NULL,
     status      TEXT NOT NULL DEFAULT 'reserved'
-        CHECK (status IN ('reserved','active','returned','cancelled')),
+        CHECK (status IN ('reserved','active','returned','cancelled','overdue')),
     returned_at TEXT,
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     CHECK (start_date <= end_date)

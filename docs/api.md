@@ -154,7 +154,9 @@
 
 **Принимает (Query):** `?itemId=5`
 
-**Возвращает 200:** `[ { "bookingId": 1, "username": "anna", "startDate": "2026-10-20", "endDate": "2026-10-22", "status": "active" } ]`
+**Возвращает 200:** `[ { "id": 1, "username": "anna", "startDate": "2026-10-20", "endDate": "2026-10-22", "status": "active" } ]`
+
+`username` — заёмщик. Этот список не переводит просроченные брони в `overdue`.
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid item id" }`
 
@@ -177,11 +179,12 @@
 
 # Слой главной, поиска и моих броней
 
-Статус `active` сам не выставляется. Его ставит заёмщик кнопкой «Забрал». Статус `returned` ставит заёмщик кнопкой «Вернул». Статус `cancelled` ставит заёмщик кнопкой «Отменить». Автоматически сервер меняет только просрочку.
+Статус `active` сам не выставляется. Его ставит заёмщик кнопкой «Забрал». Статус `returned` ставит заёмщик кнопкой «Вернул». Статус `cancelled` ставит заёмщик или владелец кнопкой «Отменить». Автоматически сервер меняет только просрочку.
 
-Перед ответом `GET /api/home` и `GET /api/my-bookings`сервер переводит в `overdue` брони, у которых `endDate` меньше сегодняшней даты и статус `reserved` или `active`. В ограничении таблицы `bookings.status` должны быть разрешены значения `reserved`, `active`, `overdue`, `returned` и `cancelled`.
+Перед ответом `GET /api/my-bookings` и `GET /api/incoming-bookings` сервер переводит в `overdue` брони, у которых `endDate` меньше сегодняшней даты и статус `reserved` или `active`. `GET /api/home` делает то же перед своим ответом. В ограничении таблицы `bookings.status` должны быть разрешены значения `reserved`, `active`, `overdue`, `returned` и `cancelled`.
 
-Кнопка «Забрал» есть у заёмщика, пока статус reserved, сегодня не раньше `startDate` и не позже endDate. Кнопка «Вернул» есть у заёмщика, пока статус `active` или `overdue`. Кнопка «Отменить» есть у заёмщика, пока статус `reserved` (без ограничения по датам). У владельца кнопок нет: он только видит, что вещь сегодня забирают или возвращают.
+Кнопка «Забрал» есть у заёмщика, пока статус `reserved`, сегодня не раньше `startDate` и не позже `endDate`. Кнопка «Вернул» есть у заёмщика, пока статус `active` или `overdue`. Кнопка «Отменить» есть у заёмщика и у владельца, пока статус `reserved` (без ограничения по датам). У владельца нет кнопок «Забрал» и «Вернул».
+
 ## GET /api/home
 Главная после входа: числа по сайту и сегодняшние дела.
 
@@ -192,9 +195,9 @@
 {
   "stats": { "users": 12, "items": 40, "bookings": 15 },
   "today": [
-    { "bookingId": 1, "itemId": 5, "title": "Молоток", "city": "Казань", "kind": "pickup", "username": "anna", "canAct": true },
-    { "bookingId": 2, "itemId": 6, "title": "Книга", "city": "Казань", "kind": "return", "username": "anna", "canAct": true },
-    { "bookingId": 3, "itemId": 7, "title": "Палатка", "city": "Москва", "kind": "pickup", "username": "ivan", "canAct": false }
+    { "bookingId": 1, "itemId": 5, "title": "Молоток", "city": "Казань", "kind": "pickup", "username": "anna", "canAct": true, "canCancel": true },
+    { "bookingId": 2, "itemId": 6, "title": "Книга", "city": "Казань", "kind": "return", "username": "anna", "canAct": true, "canCancel": false },
+    { "bookingId": 3, "itemId": 7, "title": "Палатка", "city": "Москва", "kind": "pickup", "username": "ivan", "canAct": false, "canCancel": false }
   ]
 }
 ```
@@ -264,7 +267,7 @@
 
 
 ## GET /api/incoming-bookings
-Все брони, где текущий пользователь владелец. Можно отменить бронь которая еще не `active`.
+Все брони, где текущий пользователь владелец. `username` — заёмщик. Отменить можно, пока статус `reserved`.
 
 **Принимает:** userId из куки
 
@@ -292,7 +295,7 @@
 
 
 ## GET /api/my-bookings
-Все брони, где текущий пользователь заёмщик. Здесь те же кнопки, что на главной, но список не ограничен сегодняшним днём.
+Все брони, где текущий пользователь заёмщик. `username` — владелец предмета. Здесь те же кнопки, что на главной, но список не ограничен сегодняшним днём.
 
 
 **Принимает:** userId из куки
@@ -369,7 +372,7 @@
 ## POST /api/bookings/cancel
 Заёмщик или владелец отменил бронь. Статус `reserved` становится `cancelled`. Вещь освобождается для новых броней, если на неё нет других активных броней.
 
-**Принимает (JSON):** `{ "bookingId": 1 }` 
+**Принимает (JSON):** `{ "bookingId": 1 }` (Берет userId из куки)
 
 **Возвращает 200:** `{ "ok": true }`
 
@@ -377,7 +380,7 @@
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid booking id" }`
 
-**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be cancelled" }` 
+**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be cancelled" }` (статус не `reserved`) 
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 

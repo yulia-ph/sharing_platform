@@ -44,10 +44,23 @@ struct Booking {
 
 struct BookingShort {
     int id = 0;
-    std::string borrowerUsername;
+    std::string username;
     std::string startDate;
     std::string endDate;
     BookingStatus status = BookingStatus::Reserved;
+};
+
+struct UserBooking {
+    int id = 0;
+    std::string title;
+    std::string city;
+    std::string username;
+    std::string startDate;
+    std::string endDate;
+    BookingStatus status = BookingStatus::Reserved;
+    bool canPickup = false;
+    bool canReturn = false;
+    bool canCancel = false;
 };
 
 }  // namespace share
