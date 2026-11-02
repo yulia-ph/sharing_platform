@@ -42,6 +42,7 @@ function showPage(name) {
         button.classList.toggle('active', button.dataset.page === name);
     });
     if (name === 'items') showItemsList();
+    if (name === 'bookings') showBookings();
 }
 
 function showApp(username) {
@@ -329,11 +330,22 @@ function renderBookings(bookings) {
     }
 
     bookings.forEach((booking) => {
-        const row = element('div', 'booking-row');
-        row.appendChild(element('span', 'booking-user', booking.borrowerUsername));
-        row.appendChild(
-            element('span', 'booking-dates', booking.startDate + ' to ' + booking.endDate));
-        row.appendChild(element('span', 'booking-status', booking.status));
+        const row = element('div', 'booking-row-detailed');
+
+        // Левая часть (Имя и Даты)
+        const leftPart = element('div', 'booking-left');
+        const datesBlock = element('span', 'booking-dates');
+        datesBlock.appendChild(document.createTextNode(booking.startDate));
+        datesBlock.appendChild(element('span', 'date-arrow', '→'));
+        datesBlock.appendChild(document.createTextNode(booking.endDate));
+        leftPart.appendChild(datesBlock);
+        const rightPart = element('div', 'booking-right');
+        rightPart.appendChild(
+            element('span', 'pill pill-' + booking.status, bookingStatusLabel(booking.status)));
+
+        row.appendChild(leftPart);
+        row.appendChild(rightPart);
+
         box.appendChild(row);
     });
 }
@@ -434,6 +446,172 @@ async function deleteCurrentItem() {
     }
 }
 
+// ============ Bookings ============
+
+let bookingsRequest = 0;
+let cancelBookingId = null;
+let bookingActionBusy = false;
+
+function bookingStatusLabel(status) {
+    const labels = {
+        reserved: 'Reserved',
+        active: 'Active',
+        overdue: 'Overdue',
+        returned: 'Returned',
+        cancelled: 'Cancelled'
+    };
+    return labels[status] || status;
+}
+
+function renderBookingCards(elementId, bookings, personLabel, emptyText) {
+    const box = document.getElementById(elementId);
+    box.replaceChildren();
+    if (!bookings.length) {
+        box.appendChild(element('p', 'empty-note', emptyText));
+        return;
+    }
+
+    bookings.forEach((booking) => {
+        const card = element('article', 'booking-card');
+
+        // 1. СНАЧАЛА СОЗДАЕМ И ДОБАВЛЯЕМ ДАТЫ
+        const dateRow = element('div', 'booking-dates-block');
+
+        const startDateBlock = element('div', 'date-col');
+        startDateBlock.appendChild(element('span', 'date-value', booking.startDate));
+
+        const dateArrow = element('span', 'date-arrow', '→');
+
+        const endDateBlock = element('div', 'date-col');
+        endDateBlock.appendChild(element('span', 'date-value', booking.endDate));
+
+        dateRow.appendChild(startDateBlock);
+        dateRow.appendChild(dateArrow);
+        dateRow.appendChild(endDateBlock);
+
+        const info = element('div', 'booking-info');
+        info.appendChild(element('h3', 'booking-card-title', booking.title));
+        info.appendChild(element('p', 'booking-meta', 'City: ' + (booking.city || '')));
+        info.appendChild(
+            element('p', 'booking-meta', personLabel + ': ' + (booking.username || '')));
+
+        const main = element('div', 'booking-main');
+        main.appendChild(info);
+        main.appendChild(dateRow);
+        const status = booking.status || '';
+        main.appendChild(element('span', 'pill pill-' + status, bookingStatusLabel(status)));
+        card.appendChild(main);
+
+        const actions = element('div', 'booking-actions');
+        if (booking.canPickup) {
+            actions.appendChild(bookingButton('Pick up', 'solid-btn', () => {
+                runBookingAction(booking.bookingId, '/api/bookings/pickup', 'Marked as picked up.');
+            }));
+        }
+        if (booking.canReturn) {
+            actions.appendChild(bookingButton('Return', 'solid-btn', () => {
+                runBookingAction(booking.bookingId, '/api/bookings/return', 'Marked as returned.');
+            }));
+        }
+        if (booking.canCancel) {
+            actions.appendChild(bookingButton('Cancel', 'danger-btn', () => {
+                openCancelDialog(booking);
+            }));
+        }
+        if (actions.childElementCount) card.appendChild(actions);
+        box.appendChild(card);
+    });
+}
+
+function bookingButton(label, className, onClick) {
+    const button = element('button', className, label);
+    button.type = 'button';
+    button.addEventListener('click', onClick);
+    return button;
+}
+
+async function showBookings(notice) {
+    const requestId = ++bookingsRequest;
+    closeCancelDialog();
+    clearMessage('bookings-message');
+    if (notice) showSuccess('bookings-message', notice);
+
+    try {
+        const mine = await requestJson('/api/my-bookings');
+        const incoming = await requestJson('/api/incoming-bookings');
+        if (requestId !== bookingsRequest) return;
+        renderBookingCards('my-bookings', mine, 'Owner', 'You have not borrowed anything yet.');
+        renderBookingCards(
+            'incoming-bookings', incoming, 'Borrower', 'Nobody has booked your things yet.');
+    } catch (e) {
+        if (e.status === 401 || requestId !== bookingsRequest) return;
+        showError('bookings-message', e.message || 'Server connection error');
+    }
+}
+
+function setBookingButtonsDisabled(disabled) {
+    document.querySelectorAll('#page-bookings .booking-actions button').forEach((button) => {
+        button.disabled = disabled;
+    });
+}
+
+async function runBookingAction(bookingId, path, notice) {
+    if (bookingActionBusy) return;
+    bookingActionBusy = true;
+    setBookingButtonsDisabled(true);
+    clearMessage('bookings-message');
+    try {
+        await requestJson(path, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bookingId})
+        });
+        await showBookings(notice);
+    } catch (e) {
+        if (e.status === 401) return;
+        setBookingButtonsDisabled(false);
+        showError('bookings-message', e.message || 'Server connection error');
+    } finally {
+        bookingActionBusy = false;
+    }
+}
+
+function openCancelDialog(booking) {
+    cancelBookingId = booking.bookingId;
+    document.getElementById('booking-cancel-name').textContent = booking.title || '';
+    clearMessage('booking-cancel-message');
+    document.getElementById('booking-cancel-dialog').hidden = false;
+}
+
+function closeCancelDialog() {
+    cancelBookingId = null;
+    document.getElementById('booking-cancel-dialog').hidden = true;
+}
+
+async function confirmCancelBooking() {
+    if (bookingActionBusy) return;
+    bookingActionBusy = true;
+    const bookingId = cancelBookingId;
+    const button = document.getElementById('booking-cancel-yes');
+    button.disabled = true;
+    clearMessage('booking-cancel-message');
+    try {
+        await requestJson('/api/bookings/cancel', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bookingId})
+        });
+        closeCancelDialog();
+        await showBookings('Booking cancelled.');
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('booking-cancel-message', e.message || 'Server connection error');
+    } finally {
+        bookingActionBusy = false;
+        button.disabled = false;
+    }
+}
+
 // ============ Event listeners ============
 
 document.getElementById('login-form').addEventListener('submit', submitLogin);
@@ -452,8 +630,38 @@ document.getElementById('item-delete-yes').addEventListener('click', deleteCurre
 document.getElementById('item-delete-dialog').addEventListener('click', (event) => {
     if (event.target.id === 'item-delete-dialog') closeDeleteDialog();
 });
+document.getElementById('booking-cancel-no').addEventListener('click', closeCancelDialog);
+document.getElementById('booking-cancel-yes').addEventListener('click', confirmCancelBooking);
+document.getElementById('booking-cancel-dialog').addEventListener('click', (event) => {
+    if (event.target.id === 'booking-cancel-dialog') closeCancelDialog();
+});
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeDeleteDialog();
+    if (event.key !== 'Escape') return;
+    closeDeleteDialog();
+    closeCancelDialog();
+});
+
+// ============ Tabs for Bookings (Toggle Switch) ============
+
+document.querySelectorAll('.toggle-btn').forEach((button) => {
+    button.addEventListener('click', (event) => {
+        const tabName = event.target.dataset.tab;
+        if (!tabName) return;
+
+        // 1. Переключаем активный класс у кнопок
+        document.querySelectorAll('.toggle-btn').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+
+        // 2. Прячем все контенты и показываем нужный
+        document.querySelectorAll('.booking-tab-content').forEach((content) => {
+            content.classList.remove('active-tab-content');
+        });
+        const activeContent = document.getElementById('tab-content-' + tabName);
+        if (activeContent) {
+            activeContent.classList.add('active-tab-content');
+        }
+    });
 });
 
 document.getElementById('app-screen').addEventListener('click', (event) => {
