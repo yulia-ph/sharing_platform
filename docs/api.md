@@ -79,7 +79,7 @@
 
 **Принимает (Query):** `?id=5` (Берет userId из куки)
 
-**Возвращает 200:** `{ "id": 5, "title": "Книга", "description": "Интересная", "category": "books", "city": "Казань", "status": "free" }`
+**Возвращает 200:** `{ "id": 5, "title": "Книга", "description": "Интересная", "category": "books", "city": "Казань", "pricePerDay": 100, "status": "free" }`
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid item id" }` (если ?id= не передан или не число)
 
@@ -92,7 +92,7 @@
 ## POST /api/items
 Добавить новое объявление.
 
-**Принимает (JSON):** `{ "title": "string", "description": "string", "category": "string", "city": "string" }` (Берет userId из куки)
+**Принимает (JSON):** `{ "title": "string", "description": "string", "category": "string", "city": "string", "pricePerDay": 100.5 }` (Берет userId из куки). `pricePerDay` — положительное число в BYN.
 
 **Возвращает 200:** `{ "ok": true, "id": 42 }`
 
@@ -104,6 +104,8 @@
 
 **Возвращает 400:** `{ "ok": false, "message": "City cannot be empty" }`
 
+**Возвращает 400:** `{ "ok": false, "message": "Price per day must be a positive number" }`
+
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
 **Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
@@ -112,7 +114,7 @@
 ## PUT /api/items
 Обновить существующее объявление.
 
-**Принимает (JSON):** `{ "id": 42, "title": "string", "description": "string", "category": "string", "city": "string" }` (Берет userId из куки)
+**Принимает (JSON):** `{ "id": 42, "title": "string", "description": "string", "category": "string", "city": "string", "pricePerDay": 100.5 }` (Берет userId из куки). `pricePerDay` — положительное число в BYN.
 
 **Возвращает 200:** `{ "ok": true }`
 
@@ -121,6 +123,8 @@
 **Возвращает 400:** `{ "ok": false, "message": "Invalid category" }`
 
 **Возвращает 400:** `{ "ok": false, "message": "City cannot be empty" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Price per day must be a positive number" }`
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
@@ -132,7 +136,7 @@
 
 
 ## DELETE /api/items?id=42
-Удалить объявление (мягкое удаление).
+Удалить объявление (мягкое удаление). Не проходит, если есть бронь `active` или `overdue`: вещь ещё у заёмщика. Брони `reserved` при удалении становятся `cancelled`.
 
 **Принимает (Query):** `?id=42` (Берет userId из куки)
 
@@ -179,11 +183,13 @@
 
 # Слой главной, поиска и моих броней
 
-Статус `active` сам не выставляется. Его ставит заёмщик кнопкой «Забрал». Статус `returned` ставит заёмщик кнопкой «Вернул». Статус `cancelled` ставит заёмщик или владелец кнопкой «Отменить». Автоматически сервер меняет только просрочку.
+Статус `active` сам не выставляется. Его ставит заёмщик кнопкой «Забрал». Статус `returned` ставит заёмщик кнопкой «Вернул» и подтверждением оплаты: сервер сам считает сумму и помечает её оплаченной. Статус `cancelled` ставит заёмщик или владелец кнопкой «Отменить», пока срок не кончился. Такая отмена счёта не создаёт.
 
-Перед ответом `GET /api/my-bookings` и `GET /api/incoming-bookings` сервер переводит в `overdue` брони, у которых `endDate` меньше сегодняшней даты и статус `reserved` или `active`. `GET /api/home` делает то же перед своим ответом. В ограничении таблицы `bookings.status` должны быть разрешены значения `reserved`, `active`, `overdue`, `returned` и `cancelled`.
+Перед ответом `GET /api/my-bookings` и `GET /api/incoming-bookings` сервер переводит `active` с прошедшим `endDate` в `overdue`. `reserved` с прошедшим `endDate` становится `cancelled`: вещь не забирали, счёт пишется сразу за дни от `startDate` до `endDate` включительно по 0.25 дневной цены и дальше не растёт. `GET /api/home` этого обновления не делает. В ограничении таблицы `bookings.status` должны быть разрешены значения `reserved`, `active`, `overdue`, `returned` и `cancelled`.
 
-Кнопка «Забрал» есть у заёмщика, пока статус `reserved`, сегодня не раньше `startDate` и не позже `endDate`. Кнопка «Вернул» есть у заёмщика, пока статус `active` или `overdue`. Кнопка «Отменить» есть у заёмщика и у владельца, пока статус `reserved` (без ограничения по датам). У владельца нет кнопок «Забрал» и «Вернул».
+Дневная цена берётся с предмета и в ответе не умножается на коэффициент. `amount` — текущая сумма, если бронь ещё открыта, или уже записанный счёт. Пока дата начала не наступила, сумма 0. После начала `reserved` считается по 0.25 за каждый прошедший день, `active` по 1, `overdue` по 1.25. Дни, которые ещё не наступили, в сумму не входят. Весь уже прошедший срок считается по ставке текущего статуса.
+
+Кнопка «Забрал» есть у заёмщика, пока статус `reserved`, сегодня не раньше `startDate` и не позже `endDate`. Кнопка «Вернул» есть у заёмщика, пока статус `active` или `overdue`. Кнопка «Отменить» есть у заёмщика и у владельца, пока статус `reserved` и срок ещё не кончился. Кнопка «Оплатить» есть у заёмщика, когда несобранная бронь уже отменена и счёт ещё не оплачен. У владельца нет кнопок «Забрал», «Вернул» и «Оплатить».
 
 ## GET /api/home
 Главная после входа: числа по сайту и сегодняшние дела.
@@ -282,12 +288,16 @@
     "startDate": "2026-10-23",
     "endDate": "2026-10-25",
     "status": "reserved",
-    "canCancel": true
+    "pricePerDay": 100,
+    "amount": 0,
+    "paid": false,
+    "canCancel": true,
+    "canPay": false
   }
 ]
 ```
 
-`canCancel` сервер считает сам. Клиент показывает кнопки только по этим полям.
+`pricePerDay` и `amount` те же, что в `GET /api/my-bookings`. `canCancel` и `canPay` сервер считает сам. У владельца `canPay` всегда `false`.
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
@@ -311,14 +321,18 @@
     "startDate": "2026-10-23",
     "endDate": "2026-10-25",
     "status": "reserved",
+    "pricePerDay": 100,
+    "amount": 0,
+    "paid": false,
     "canPickup": true,
     "canReturn": false,
-    "canCancel": true
+    "canCancel": true,
+    "canPay": false
   }
 ]
 ```
 
-`canPickup`, `canCancel` и `canReturn` сервер считает сам. Клиент показывает кнопки только по этим полям.
+`pricePerDay` — дневная цена предмета в BYN, без коэффициента. Это число, дробная часть — копейки. `amount` — сколько выйдет в BYN, если закрыть бронь сегодня, либо уже замороженный счёт. `canPickup`, `canCancel`, `canReturn` и `canPay` сервер считает сам. Клиент показывает кнопки только по этим полям.
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 
@@ -348,7 +362,7 @@
 
 
 ## POST /api/bookings/return
-Заёмщик вернул вещь. Статус `active` или `overdue` становится `returned`, в `returnedAt` пишется сегодняшняя дата.
+Заёмщик вернул вещь и подтвердил оплату. Статус `active` или `overdue` становится `returned`, в `returnedAt` пишется сегодняшняя дата. Сумму считает сервер и сохраняет её как оплаченную. Если срок `active` уже кончился, ставка берётся как у `overdue` (1.25), даже если список ещё не успел сменить статус.
 
 **Принимает (JSON):** `{ "bookingId": 1 }` (Берет userId из куки)
 
@@ -380,7 +394,29 @@
 
 **Возвращает 400:** `{ "ok": false, "message": "Invalid booking id" }`
 
-**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be cancelled" }` (статус не `reserved`) 
+**Возвращает 400:** `{ "ok": false, "message": "Booking cannot be cancelled" }` (статус не `reserved`, либо срок `reserved` уже кончился: тогда бронь становится `cancelled` со счётом, а не бесплатной отменой) 
+
+**Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
+
+**Возвращает 403:** `{ "ok": false, "message": "You don't have access to this booking" }`
+
+**Возвращает 404:** `{ "ok": false, "message": "Booking not found" }`
+
+**Возвращает 500:** `{ "ok": false, "message": "Internal server error" }`
+
+
+## POST /api/bookings/pay
+Заёмщик подтверждает оплату счёта за бронь, которую не забрали и срок которой уже кончился. Статус остаётся `cancelled`, счёт помечается оплаченным. Сумма уже записана и здесь заново не считается.
+
+**Принимает (JSON):** `{ "bookingId": 1 }` (Берет userId из куки)
+
+**Возвращает 200:** `{ "ok": true }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid JSON" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Invalid booking id" }`
+
+**Возвращает 400:** `{ "ok": false, "message": "Nothing to pay" }`
 
 **Возвращает 401:** `{ "ok": false, "message": "Not logged in" }`
 

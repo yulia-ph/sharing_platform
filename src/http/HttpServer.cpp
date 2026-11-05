@@ -90,6 +90,19 @@ static std::optional<int> bodyBookingId(const httplib::Request& req, httplib::Re
     }
 }
 
+static std::optional<double> bodyPrice(const nlohmann::json& data, httplib::Response& res) {
+    if (!data.contains("pricePerDay") || !data.at("pricePerDay").is_number()) {
+        sendError(res, 400, "Price per day must be a positive number");
+        return std::nullopt;
+    }
+    double price = data.at("pricePerDay").get<double>();
+    if (!(price > 0)) {
+        sendError(res, 400, "Price per day must be a positive number");
+        return std::nullopt;
+    }
+    return price;
+}
+
 static std::optional<int> queryId(const httplib::Request& req, const char* name) {
     if (!req.has_param(name)) return std::nullopt;
 
@@ -257,6 +270,7 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/my-items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         nlohmann::json list = nlohmann::json::array();
         for (const ItemShort& item : items_.findUserItems(*userId)) {
@@ -270,6 +284,7 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         auto itemId = queryId(req, "id");
         if (!itemId || *itemId <= 0) {
@@ -288,12 +303,14 @@ void HttpServer::run(int port) {
                                {"description", item->description},
                                {"category", itemCategoryToString(item->category)},
                                {"city", item->city},
+                               {"pricePerDay", item->pricePerDay},
                                {"status", items_.availability(item->id)}};
         sendJson(res, 200, body.dump());
     });
 
     svr.Post("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         nlohmann::json data;
         try {
@@ -303,14 +320,18 @@ void HttpServer::run(int port) {
             return;
         }
 
+        auto price = bodyPrice(data, res);
+        if (!price) return;
+
         Result result =
             items_.addItem(*userId, data.value("title", ""), data.value("description", ""),
-                           data.value("category", ""), data.value("city", ""));
+                           data.value("category", ""), data.value("city", ""), *price);
         sendResult(res, result, true);
     });
 
     svr.Put("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         nlohmann::json data;
         try {
@@ -328,14 +349,18 @@ void HttpServer::run(int port) {
             return;
         }
 
+        auto price = bodyPrice(data, res);
+        if (!price) return;
+
         Result result =
             items_.editItem(*userId, itemId, data.value("title", ""), data.value("description", ""),
-                            data.value("category", ""), data.value("city", ""));
+                            data.value("category", ""), data.value("city", ""), *price);
         sendResult(res, result, false);
     });
 
     svr.Delete("/api/items", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         auto itemId = queryId(req, "id");
         if (!itemId || *itemId <= 0) {
@@ -369,6 +394,7 @@ void HttpServer::run(int port) {
 
     svr.Get("/api/categories", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
 
         sendJson(res, 200, nlohmann::json(items_.getCategories()).dump());
     });
@@ -395,9 +421,13 @@ void HttpServer::run(int port) {
                             {"startDate", booking.startDate},
                             {"endDate", booking.endDate},
                             {"status", bookingStatusToString(booking.status)},
+                            {"pricePerDay", booking.pricePerDay},
+                            {"amount", booking.amount},
+                            {"paid", booking.paid},
                             {"canPickup", booking.canPickup},
                             {"canReturn", booking.canReturn},
-                            {"canCancel", booking.canCancel}});
+                            {"canCancel", booking.canCancel},
+                            {"canPay", booking.canPay}});
         }
         sendJson(res, 200, list.dump());
     });
@@ -415,7 +445,11 @@ void HttpServer::run(int port) {
                             {"startDate", booking.startDate},
                             {"endDate", booking.endDate},
                             {"status", bookingStatusToString(booking.status)},
-                            {"canCancel", booking.canCancel}});
+                            {"pricePerDay", booking.pricePerDay},
+                            {"amount", booking.amount},
+                            {"paid", booking.paid},
+                            {"canCancel", booking.canCancel},
+                            {"canPay", booking.canPay}});
         }
         sendJson(res, 200, list.dump());
     });
@@ -436,6 +470,15 @@ void HttpServer::run(int port) {
         auto bookingId = bodyBookingId(req, res);
         if (!bookingId) return;
         sendResult(res, bookings_.returnBooking(*userId, *bookingId), false);
+    });
+
+    svr.Post("/api/bookings/pay", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        auto bookingId = bodyBookingId(req, res);
+        if (!bookingId) return;
+        sendResult(res, bookings_.pay(*userId, *bookingId), false);
     });
 
     svr.Post("/api/bookings/pickup", [this](const auto& req, auto& res) {

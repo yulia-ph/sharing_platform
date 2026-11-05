@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "BookingCharge.h"
 #include "BookingRepository.h"
 #include "BookingState.h"
 #include "DateUtils.h"
@@ -21,9 +22,11 @@ class BookingService {
     Result pickup(int userId, int bookingId);
     Result returnBooking(int userId, int bookingId);
     Result cancel(int userId, int bookingId);
+    Result pay(int userId, int bookingId);
 
    private:
     Result loadBooking(int userId, int bookingId, bool borrowerOnly, Booking& booking);
+    void settleUncollected(UserBooking& booking);
     void refreshOverdue(UserBooking& booking);
     void present(UserBooking& booking, bool borrower);
 
