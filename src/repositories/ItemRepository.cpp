@@ -46,8 +46,8 @@ std::vector<ItemShort> ItemRepository::findItemByUserId(int userId) {
 std::optional<Item> ItemRepository::findItemById(int itemId) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql =
-        "SELECT id, owner_id, title, description, created_at, is_deleted, category, city "
-        "FROM items WHERE id = ?";
+        "SELECT id, owner_id, title, description, created_at, is_deleted, category, city, "
+        "price_per_day FROM items WHERE id = ?";
 
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw std::runtime_error(std::string("ItemRepository::findItemById: ") +
@@ -69,6 +69,7 @@ std::optional<Item> ItemRepository::findItemById(int itemId) {
         std::string category = column<std::string>(stmt, 6);
         item.category = itemCategoryFromString(category.empty() ? "other" : category);
         item.city = column<std::string>(stmt, 7);
+        item.pricePerDay = column<double>(stmt, 8);
         result = item;
     }
 
@@ -85,8 +86,8 @@ std::optional<Item> ItemRepository::findItemById(int itemId) {
 int ItemRepository::insertItem(const Item& item) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql =
-        "INSERT INTO items (owner_id, title, description, category, created_at, city) "
-        "VALUES (?, ?, ?, ?, ?, ?)";
+        "INSERT INTO items (owner_id, title, description, category, created_at, city, "
+        "price_per_day) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
         throw std::runtime_error(std::string("ItemRepository::insertItem: ") +
@@ -100,6 +101,7 @@ int ItemRepository::insertItem(const Item& item) {
     sqlite3_bind_text(stmt, 4, category.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 5, item.createdAt.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 6, item.city.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 7, item.pricePerDay);
 
     int stepResult = sqlite3_step(stmt);
     if (stepResult != SQLITE_DONE) {
@@ -114,7 +116,7 @@ int ItemRepository::insertItem(const Item& item) {
 bool ItemRepository::editItem(int itemId, const Item& newItem) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql =
-        "UPDATE items SET title = ?, description = ?, category = ?, city = ? "
+        "UPDATE items SET title = ?, description = ?, category = ?, city = ?, price_per_day = ? "
         "WHERE id = ? AND is_deleted = 0";
 
     if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -127,7 +129,8 @@ bool ItemRepository::editItem(int itemId, const Item& newItem) {
     sqlite3_bind_text(stmt, 2, newItem.description.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 3, category.c_str(), -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(stmt, 4, newItem.city.c_str(), -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 5, itemId);
+    sqlite3_bind_double(stmt, 5, newItem.pricePerDay);
+    sqlite3_bind_int(stmt, 6, itemId);
 
     int stepResult = sqlite3_step(stmt);
     if (stepResult != SQLITE_DONE) {

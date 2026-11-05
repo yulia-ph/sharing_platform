@@ -11,6 +11,7 @@ CREATE TABLE items (
     description TEXT,
     category    TEXT NOT NULL DEFAULT 'other',
     city        TEXT NOT NULL DEFAULT '',
+    price_per_day REAL NOT NULL DEFAULT 0,
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     is_deleted  INTEGER NOT NULL DEFAULT 0
 );
@@ -24,6 +25,8 @@ CREATE TABLE bookings (
     status      TEXT NOT NULL DEFAULT 'reserved'
         CHECK (status IN ('reserved','active','returned','cancelled','overdue')),
     returned_at TEXT,
+    amount      REAL,
+    paid        INTEGER NOT NULL DEFAULT 0,
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     CHECK (start_date <= end_date)
 );
