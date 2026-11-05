@@ -306,6 +306,7 @@ async function openItemForm(item) {
         document.getElementById('item-description').value = item.description || '';
         document.getElementById('item-category').value = item.category || '';
         document.getElementById('item-city').value = item.city || '';
+        document.getElementById('item-price').value = item.pricePerDay || '';
     } else {
         itemEditingId = null;
         document.getElementById('item-form-heading').textContent = 'New item';
@@ -359,6 +360,7 @@ async function openItem(id) {
     document.getElementById('item-detail-title').textContent = '';
     document.getElementById('item-detail-city').textContent = '';
     document.getElementById('item-detail-category').textContent = '';
+    document.getElementById('item-detail-price').textContent = '';
     document.getElementById('item-detail-description').textContent = '';
     document.getElementById('item-detail-status').textContent = '';
     document.getElementById('item-detail-bookings').replaceChildren();
@@ -371,6 +373,7 @@ async function openItem(id) {
         document.getElementById('item-detail-title').textContent = item.title;
         document.getElementById('item-detail-city').textContent = item.city;
         document.getElementById('item-detail-category').textContent = item.category;
+        document.getElementById('item-detail-price').textContent = formatMoney(item.pricePerDay);
         document.getElementById('item-detail-description').textContent =
             item.description || 'No description.';
         const status = document.getElementById('item-detail-status');
@@ -408,11 +411,16 @@ async function submitItem(event) {
         showError('item-form-message', 'City cannot be empty');
         return;
     }
+    const pricePerDay = Number(document.getElementById('item-price').value);
+    if (!Number.isFinite(pricePerDay) || pricePerDay <= 0) {
+        showError('item-form-message', 'Price per day must be a positive number');
+        return;
+    }
 
     const button = document.querySelector('#item-form button[type="submit"]');
     button.disabled = true;
     const editingId = itemEditingId;
-    const body = {title, description, category, city};
+    const body = {title, description, category, city, pricePerDay};
     if (editingId) body.id = editingId;
 
     try {
@@ -450,7 +458,15 @@ async function deleteCurrentItem() {
 
 let bookingsRequest = 0;
 let cancelBookingId = null;
+let payBookingId = null;
+let payPath = null;
 let bookingActionBusy = false;
+
+function formatMoney(amount) {
+    const value = Number(amount);
+    const text = Number.isFinite(value) ? value.toFixed(2) : '0.00';
+    return text + ' BYN';
+}
 
 function bookingStatusLabel(status) {
     const labels = {
@@ -494,6 +510,8 @@ function renderBookingCards(elementId, bookings, personLabel, emptyText) {
         info.appendChild(element('p', 'booking-meta', 'City: ' + (booking.city || '')));
         info.appendChild(
             element('p', 'booking-meta', personLabel + ': ' + (booking.username || '')));
+        info.appendChild(
+            element('p', 'booking-meta', 'Price per day: ' + formatMoney(booking.pricePerDay)));
 
         const main = element('div', 'booking-main');
         main.appendChild(info);
@@ -510,7 +528,12 @@ function renderBookingCards(elementId, bookings, personLabel, emptyText) {
         }
         if (booking.canReturn) {
             actions.appendChild(bookingButton('Return', 'solid-btn', () => {
-                runBookingAction(booking.bookingId, '/api/bookings/return', 'Marked as returned.');
+                openPayDialog(booking, 'return');
+            }));
+        }
+        if (booking.canPay) {
+            actions.appendChild(bookingButton('Pay', 'solid-btn', () => {
+                openPayDialog(booking, 'pay');
             }));
         }
         if (booking.canCancel) {
@@ -518,7 +541,13 @@ function renderBookingCards(elementId, bookings, personLabel, emptyText) {
                 openCancelDialog(booking);
             }));
         }
-        if (actions.childElementCount) card.appendChild(actions);
+        const footer = element('div', 'booking-footer');
+        footer.appendChild(actions);
+        const due = element('div', 'booking-due');
+        due.appendChild(element('span', 'booking-due-label', booking.paid ? 'Paid' : 'To pay'));
+        due.appendChild(element('span', 'booking-due-value', formatMoney(booking.amount)));
+        footer.appendChild(due);
+        card.appendChild(footer);
         box.appendChild(card);
     });
 }
@@ -533,6 +562,7 @@ function bookingButton(label, className, onClick) {
 async function showBookings(notice) {
     const requestId = ++bookingsRequest;
     closeCancelDialog();
+    closePayDialog();
     clearMessage('bookings-message');
     if (notice) showSuccess('bookings-message', notice);
 
@@ -588,6 +618,49 @@ function closeCancelDialog() {
     document.getElementById('booking-cancel-dialog').hidden = true;
 }
 
+function openPayDialog(booking, mode) {
+    payBookingId = booking.bookingId;
+    payPath = mode === 'return' ? '/api/bookings/return' : '/api/bookings/pay';
+    document.getElementById('booking-pay-heading').textContent =
+        mode === 'return' ? 'Return this item?' : 'Pay this bill?';
+    document.getElementById('booking-pay-name').textContent = booking.title || '';
+    document.getElementById('booking-pay-amount').textContent =
+        'To pay: ' + formatMoney(booking.amount);
+    clearMessage('booking-pay-message');
+    document.getElementById('booking-pay-dialog').hidden = false;
+}
+
+function closePayDialog() {
+    payBookingId = null;
+    payPath = null;
+    document.getElementById('booking-pay-dialog').hidden = true;
+}
+
+async function confirmPayBooking() {
+    if (bookingActionBusy || !payBookingId || !payPath) return;
+    bookingActionBusy = true;
+    const bookingId = payBookingId;
+    const path = payPath;
+    const button = document.getElementById('booking-pay-yes');
+    button.disabled = true;
+    clearMessage('booking-pay-message');
+    try {
+        await requestJson(path, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bookingId})
+        });
+        closePayDialog();
+        await showBookings(path.endsWith('/return') ? 'Marked as returned.' : 'Payment recorded.');
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('booking-pay-message', e.message || 'Server connection error');
+    } finally {
+        bookingActionBusy = false;
+        button.disabled = false;
+    }
+}
+
 async function confirmCancelBooking() {
     if (bookingActionBusy) return;
     bookingActionBusy = true;
@@ -630,6 +703,11 @@ document.getElementById('item-delete-yes').addEventListener('click', deleteCurre
 document.getElementById('item-delete-dialog').addEventListener('click', (event) => {
     if (event.target.id === 'item-delete-dialog') closeDeleteDialog();
 });
+document.getElementById('booking-pay-no').addEventListener('click', closePayDialog);
+document.getElementById('booking-pay-yes').addEventListener('click', confirmPayBooking);
+document.getElementById('booking-pay-dialog').addEventListener('click', (event) => {
+    if (event.target.id === 'booking-pay-dialog') closePayDialog();
+});
 document.getElementById('booking-cancel-no').addEventListener('click', closeCancelDialog);
 document.getElementById('booking-cancel-yes').addEventListener('click', confirmCancelBooking);
 document.getElementById('booking-cancel-dialog').addEventListener('click', (event) => {
@@ -639,6 +717,7 @@ document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     closeDeleteDialog();
     closeCancelDialog();
+    closePayDialog();
 });
 
 // ============ Tabs for Bookings (Toggle Switch) ============
