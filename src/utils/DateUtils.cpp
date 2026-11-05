@@ -36,4 +36,22 @@ bool isValidDate(const std::string& s) {
     return true;
 }
 
+int inclusiveDays(const std::string& start, const std::string& end) {
+    if (!isValidDate(start) || !isValidDate(end) || end < start) return 0;
+
+    auto serial = [](const std::string& date) {
+        int year = std::stoi(date.substr(0, 4));
+        int month = std::stoi(date.substr(5, 2));
+        int day = std::stoi(date.substr(8, 2));
+        year -= month <= 2;
+        const int era = (year >= 0 ? year : year - 399) / 400;
+        const unsigned yearOfEra = static_cast<unsigned>(year - era * 400);
+        const unsigned dayOfYear = (153 * (month + (month > 2 ? -3 : 9)) + 2) / 5 + day - 1;
+        const unsigned dayOfEra = yearOfEra * 365 + yearOfEra / 4 - yearOfEra / 100 + dayOfYear;
+        return era * 146097 + static_cast<int>(dayOfEra) - 719468;
+    };
+
+    return serial(end) - serial(start) + 1;
+}
+
 }  // namespace share

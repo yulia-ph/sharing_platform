@@ -1,6 +1,7 @@
 #include "ItemService.h"
 
 #include <cctype>
+#include <cmath>
 #include <stdexcept>
 
 #include "BookingState.h"
@@ -56,7 +57,7 @@ std::string ItemService::availability(int itemId) {
 }
 
 Result ItemService::addItem(int ownerId, const std::string& title, const std::string& description,
-                            const std::string& category, const std::string& city) {
+                            const std::string& category, const std::string& city, double pricePerDay) {
     if (ownerId <= 0) {
         return Result::error("Invalid owner id");
     }
@@ -77,6 +78,11 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     }
     std::string cityError = validateCity(city);
     if (!cityError.empty()) return Result::error(cityError);
+    if (!std::isfinite(pricePerDay) || pricePerDay <= 0) {
+        return Result::error("Price per day must be a positive number");
+    }
+    pricePerDay = std::round(pricePerDay * 100.0) / 100.0;
+    if (!(pricePerDay > 0)) return Result::error("Price per day must be a positive number");
 
     Item item;
     item.ownerId = ownerId;
@@ -85,6 +91,7 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     item.createdAt = today();
     item.category = cat;
     item.city = trim(city);
+    item.pricePerDay = pricePerDay;
 
     item.id = items_.insertItem(item);
 
@@ -97,7 +104,7 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
 
 Result ItemService::editItem(int userId, int itemId, const std::string& title,
                              const std::string& description, const std::string& category,
-                             const std::string& city) {
+                             const std::string& city, double pricePerDay) {
     if (itemId <= 0) {
         return Result::error("Invalid item id");
     }
@@ -126,11 +133,17 @@ Result ItemService::editItem(int userId, int itemId, const std::string& title,
     }
     std::string cityError = validateCity(city);
     if (!cityError.empty()) return Result::error(cityError);
+    if (!std::isfinite(pricePerDay) || pricePerDay <= 0) {
+        return Result::error("Price per day must be a positive number");
+    }
+    pricePerDay = std::round(pricePerDay * 100.0) / 100.0;
+    if (!(pricePerDay > 0)) return Result::error("Price per day must be a positive number");
 
     item->title = title;
     item->description = description;
     item->category = cat;
     item->city = trim(city);
+    item->pricePerDay = pricePerDay;
 
     if (!items_.editItem(itemId, *item)) {
         return Result::error("Failed to update item");
@@ -162,8 +175,9 @@ Result ItemService::deleteItem(int userId, int itemId) {
         }
 
         for (BookingShort booking : allBookings) {
-            if (booking.status == BookingStatus::Active) {
-                throw std::runtime_error("Active bookings detected");
+            if (booking.status == BookingStatus::Active ||
+                booking.status == BookingStatus::Overdue) {
+                throw std::runtime_error("Item is still with the borrower");
             }
             if (booking.status == BookingStatus::Reserved) {
                 bookings_.updateBookingStatus(booking.id, "cancelled");

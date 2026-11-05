@@ -24,10 +24,10 @@ class ItemService {
     std::vector<std::string> getCategories();
     std::string availability(int itemId);
     Result addItem(int ownerId, const std::string& title, const std::string& description,
-                   const std::string& category, const std::string& city);
+                   const std::string& category, const std::string& city, double pricePerDay);
     Result editItem(int userId, int itemId, const std::string& title,
                     const std::string& description, const std::string& category,
-                    const std::string& city);
+                    const std::string& city, double pricePerDay);
     Result deleteItem(int userId, int itemId);
 
    private:

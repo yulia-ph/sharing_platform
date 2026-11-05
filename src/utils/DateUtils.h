@@ -10,4 +10,7 @@ std::string today();
 
 bool isValidDate(const std::string& s);
 
+// Days from start through end, both included. Zero when end is earlier than start.
+int inclusiveDays(const std::string& start, const std::string& end);
+
 }  // namespace share
