@@ -22,6 +22,7 @@ struct Item {
     bool isDeleted = false;
     ItemCategory category = ItemCategory::Other;
     std::string city;
+    double pricePerDay = 0;
 };
 
 struct ItemShort {
@@ -40,6 +41,9 @@ struct Booking {
     BookingStatus status = BookingStatus::Reserved;
     std::optional<std::string> returnedAt;
     std::string createdAt;
+    double pricePerDay = 0;
+    std::optional<double> amount;
+    bool paid = false;
 };
 
 struct BookingShort {
@@ -61,6 +65,11 @@ struct UserBooking {
     bool canPickup = false;
     bool canReturn = false;
     bool canCancel = false;
+    bool canPay = false;
+    double pricePerDay = 0;
+    double amount = 0;
+    bool billFrozen = false;
+    bool paid = false;
 };
 
 }  // namespace share
