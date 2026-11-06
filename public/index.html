@@ -165,6 +165,10 @@
                         <label for="item-city">City</label>
                         <input type="text" id="item-city" autocomplete="off">
                     </div>
+                    <div class="field">
+                        <label for="item-price">Price per day, BYN</label>
+                        <input type="number" id="item-price" min="0.01" step="0.01">
+                    </div>
                     <div class="form-actions">
                         <button type="submit" class="solid-btn">Save</button>
                         <button type="button" id="item-form-cancel" class="ghost-btn">Cancel</button>
@@ -186,6 +190,10 @@
                         <div>
                             <dt>Category</dt>
                             <dd id="item-detail-category"></dd>
+                        </div>
+                        <div>
+                            <dt>Price per day</dt>
+                            <dd id="item-detail-price"></dd>
                         </div>
                     </dl>
                     <p id="item-detail-description" class="detail-description"></p>
@@ -243,6 +251,19 @@
             <div class="form-actions">
                 <button type="button" id="item-delete-yes" class="danger-btn">Delete</button>
                 <button type="button" id="item-delete-no" class="ghost-btn">Keep</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="booking-pay-dialog" class="modal" hidden>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="booking-pay-heading">
+            <h2 id="booking-pay-heading">Return this item?</h2>
+            <p id="booking-pay-name"></p>
+            <p id="booking-pay-amount" class="booking-pay-sum"></p>
+            <div id="booking-pay-message" class="message"></div>
+            <div class="form-actions">
+                <button type="button" id="booking-pay-yes" class="solid-btn">Confirm payment</button>
+                <button type="button" id="booking-pay-no" class="ghost-btn">Back</button>
             </div>
         </div>
     </div>
