@@ -13,6 +13,7 @@ class ItemRepository {
     explicit ItemRepository(Database& db) : db_(db) {}
     std::vector<ItemShort> findItemByUserId(int userId);
     std::optional<Item> findItemById(int itemId);
+    int insertItem(const Item& item);
     bool editItem(int itemId, const Item& newItem);
     bool deleteItem(int itemId);
     std::vector<std::string> findCities();
