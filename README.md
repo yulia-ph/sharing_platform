@@ -46,6 +46,10 @@
 | Реализовать BookingService для броней                     | yulia-ph                                | ✅ Готово |
 | Реализовать страницу броней                               | daradoroncova1-debug                    | ✅ Готово |
 | Внести изменения в связи с добавлением цен                | arin-aa, yulia-ph, daradoroncova1-debug | ✅ Готово |
-| Соглавовать работу над поиском                            | arin-aa, yulia-ph, daradoroncova1-debug | -        |
+| Определить интерфейсы для поиска                          | arin-aa, yulia-ph, daradoroncova1-debug | ✅ Готово |
+| Определить интерфейсы для поиска                          | arin-aa, yulia-ph, daradoroncova1-debug | ✅ Готово |
+| Реализовать функционал для поиска (сервис)                | yulia-ph                                | -        |
+| Реализовать функционал для поиска (бд)                    | arin-aa                                 | -        |
+| Реализовать функционал для поиска (сайт)                  | daradoroncova1-debug                    | -        |
 | Соглавовать функционал главной страницы                   | arin-aa, yulia-ph, daradoroncova1-debug | -        |
 |                                                           |                                         |

@@ -19,6 +19,8 @@ class BookingRepository {
     void settleUncollected(int bookingId, double amount);
     void markReturned(int bookingId, const std::string& returnedAt, double amount);
     bool markPaid(int bookingId);
+    std::vector<BookingShort> findOverdueBookings(int itemId);
+    int insertBooking(const Booking& booking);
 
    private:
     Database& db_;

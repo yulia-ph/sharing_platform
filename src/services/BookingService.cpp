@@ -33,7 +33,7 @@ void BookingService::present(UserBooking& booking, bool borrower) {
     refreshOverdue(booking);
     if (!booking.billFrozen) {
         booking.amount = bookingCharge(booking.status, booking.startDate, booking.endDate, today(),
-                                booking.pricePerDay);
+                                       booking.pricePerDay);
     }
 
     const BookingState& state = bookingState(booking.status);
@@ -42,6 +42,26 @@ void BookingService::present(UserBooking& booking, bool borrower) {
     booking.canReturn = false;
     booking.canPay = false;
     if (borrower) {
+        auto wholebooking = bookings_.findBookingById(booking.id);
+        for (BookingShort book : bookings_.findOverdueBookings(wholebooking->itemId)) {
+            if (book.username != booking.username) {
+                if (booking.startDate == booking.endDate) {
+                    booking.status = BookingStatus::Cancelled;
+                    notifications_.push_back(
+                        "Sorry! Booking of " + booking.title + " on days from " +
+                        booking.startDate + " to " + booking.endDate +
+                        "has been cancelled due to the overdue of previous booking");
+                    return;
+                }
+                booking.startDate = tomorrow();
+                notifications_.push_back("Sorry! Booking of " + booking.title +
+                                         " has been moved forward due to the overdue of previous "
+                                         "booking. New dates: from " +
+                                         booking.startDate + " to " + booking.endDate);
+                return;
+            }
+        }
+
         booking.canPickup = state.canPickup(today(), booking.startDate, booking.endDate);
         booking.canReturn = state.canReturn();
         booking.canPay = booking.billFrozen && !booking.paid && booking.amount > 0 &&
@@ -147,6 +167,12 @@ Result BookingService::pay(int userId, int bookingId) {
 
     if (!bookings_.markPaid(bookingId)) return Result::error("Nothing to pay");
     return Result::success();
+}
+
+std::vector<std::string> BookingService::popNotifications() {
+    auto result = notifications_;
+    notifications_.clear();
+    return result;
 }
 
 }  // namespace share

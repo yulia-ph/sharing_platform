@@ -429,6 +429,11 @@ void HttpServer::run(int port) {
                             {"canCancel", booking.canCancel},
                             {"canPay", booking.canPay}});
         }
+        auto notifications = bookings_.popNotifications();
+        if (!notifications.empty()) {
+            list["notifications"] = notifications;
+        }
+
         sendJson(res, 200, list.dump());
     });
 
@@ -451,6 +456,11 @@ void HttpServer::run(int port) {
                             {"canCancel", booking.canCancel},
                             {"canPay", booking.canPay}});
         }
+        auto notifications = bookings_.popNotifications();
+        if (!notifications.empty()) {
+            list["notifications"] = notifications;
+        }
+
         sendJson(res, 200, list.dump());
     });
 

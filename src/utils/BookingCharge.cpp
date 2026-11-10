@@ -24,9 +24,9 @@ double bookingCharge(BookingStatus status, const std::string& startDate, const s
         rate = 0.25;
         if (today > endDate) until = endDate;
     } else if (status == BookingStatus::Active) {
-        rate = today > endDate ? 1.25 : 1.0;
+        rate = today > endDate ? 2.0 : 1.0;
     } else if (status == BookingStatus::Overdue) {
-        rate = 1.25;
+        rate = 2.0;
     } else {
         return 0;
     }

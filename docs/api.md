@@ -292,8 +292,18 @@
     "amount": 0,
     "paid": false,
     "canCancel": true,
-    "canPay": false
-  }
+    "canPay": false,
+    "notifications": ["Message 1", "Message 2"]
+  },
+  {
+    "bookingId": 2,
+    "title": "Книга",
+    ...
+  },
+  "notifications": [
+    "Sorry! Booking of Книга has been moved forward due to the overdue of previous booking. New dates: from 2026-10-24 to 2026-10-25",
+    ...
+  ]
 ]
 ```
 
@@ -327,8 +337,18 @@
     "canPickup": true,
     "canReturn": false,
     "canCancel": true,
-    "canPay": false
-  }
+    "canPay": false,
+    "notifications": ["Message 1", "Message 2"]
+  },
+  {
+    "bookingId": 2,
+    "title": "Книга",
+    ...
+  },
+  "notifications": [
+    "Sorry! Booking of Книга has been moved forward due to the overdue of previous booking. New dates: from 2026-10-24 to 2026-10-25",
+    ...
+  ]
 ]
 ```
 

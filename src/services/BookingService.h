@@ -23,6 +23,9 @@ class BookingService {
     Result returnBooking(int userId, int bookingId);
     Result cancel(int userId, int bookingId);
     Result pay(int userId, int bookingId);
+    std::vector<std::string> BookingService::popNotifications();
+    Result createBooking(int itemId, int borrowerId, int ownerId, std::string startDate,
+                         std::string endDate);
 
    private:
     Result loadBooking(int userId, int bookingId, bool borrowerOnly, Booking& booking);
@@ -31,6 +34,7 @@ class BookingService {
     void present(UserBooking& booking, bool borrower);
 
     BookingRepository& bookings_;
+    std::vector<std::string> notifications_;
 };
 
 }  // namespace share
