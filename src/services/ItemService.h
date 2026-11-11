@@ -30,8 +30,8 @@ class ItemService {
                     const std::string& city, double pricePerDay);
     Result deleteItem(int userId, int itemId);
     std::vector<std::string> getCities();
-    std::vector<ItemShort> getItemsByCityCat(const std::string& city, const std::string& category);
-    std::vector<ItemShort> getItemsByTitleCat(const std::string& city, const std::string& title);
+    Result searchItems(int userId, const std::string& city, const std::string& category,
+                       const std::string& title, std::vector<ItemShort>& items);
 
    private:
     ItemRepository& items_;

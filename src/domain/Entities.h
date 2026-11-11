@@ -54,14 +54,21 @@ struct BookingShort {
     BookingStatus status = BookingStatus::Reserved;
 };
 
+struct BookingNotice {
+    int bookingId = 0;
+    std::string text;
+};
+
 struct UserBooking {
     int id = 0;
+    int itemId = 0;
     std::string title;
     std::string city;
     std::string username;
     std::string startDate;
     std::string endDate;
     BookingStatus status = BookingStatus::Reserved;
+    std::string notice;
     bool canPickup = false;
     bool canReturn = false;
     bool canCancel = false;

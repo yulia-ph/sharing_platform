@@ -27,6 +27,7 @@ CREATE TABLE bookings (
     returned_at TEXT,
     amount      REAL,
     paid        INTEGER NOT NULL DEFAULT 0,
+    notice      TEXT,
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     CHECK (start_date <= end_date)
 );

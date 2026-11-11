@@ -17,8 +17,8 @@ class ItemRepository {
     bool editItem(int itemId, const Item& newItem);
     bool deleteItem(int itemId);
     std::vector<std::string> findCities();
-    std::vector<ItemShort> findItemsByCityCat(const std::string& city, const std::string& category);
-    std::vector<ItemShort> findItemsByTitleCat(const std::string& city, const std::string& title);
+    std::vector<ItemShort> findItems(int userId, const std::string& city, const std::string& category,
+                                     const std::string& title);
 
    private:
     Database& db_;
