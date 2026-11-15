@@ -1,5 +1,6 @@
 #include "ItemService.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <stdexcept>
@@ -23,6 +24,20 @@ static std::string trim(const std::string& value) {
 static std::string validateCity(const std::string& city) {
     if (trim(city).empty()) return "City cannot be empty";
     return "";
+}
+
+static std::string normalizeCity(const std::string& city) {
+    if (city.empty()) return "";
+
+    std::string result = trim(city);
+    if (result.empty()) return result;
+
+    result[0] = std::toupper(static_cast<unsigned char>(result[0]));
+    for (size_t i = 1; i < result.size(); ++i) {
+        result[i] = std::tolower(static_cast<unsigned char>(result[i]));
+    }
+
+    return result;
 }
 
 std::vector<ItemShort> ItemService::findUserItems(int userId) {
@@ -57,7 +72,8 @@ std::string ItemService::availability(int itemId) {
 }
 
 Result ItemService::addItem(int ownerId, const std::string& title, const std::string& description,
-                            const std::string& category, const std::string& city, double pricePerDay) {
+                            const std::string& category, const std::string& city,
+                            double pricePerDay) {
     if (ownerId <= 0) {
         return Result::error("Invalid owner id");
     }
@@ -78,6 +94,9 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     }
     std::string cityError = validateCity(city);
     if (!cityError.empty()) return Result::error(cityError);
+
+    std::string normalizedCity = normalizeCity(city);
+
     if (!std::isfinite(pricePerDay) || pricePerDay <= 0) {
         return Result::error("Price per day must be a positive number");
     }
@@ -90,7 +109,7 @@ Result ItemService::addItem(int ownerId, const std::string& title, const std::st
     item.description = description;
     item.createdAt = today();
     item.category = cat;
-    item.city = trim(city);
+    item.city = normalizedCity;
     item.pricePerDay = pricePerDay;
 
     item.id = items_.insertItem(item);
@@ -142,7 +161,7 @@ Result ItemService::editItem(int userId, int itemId, const std::string& title,
     item->title = title;
     item->description = description;
     item->category = cat;
-    item->city = trim(city);
+    item->city = normalizeCity(city);
     item->pricePerDay = pricePerDay;
 
     if (!items_.editItem(itemId, *item)) {
@@ -190,6 +209,45 @@ Result ItemService::deleteItem(int userId, int itemId) {
         return Result::error(std::string("Failed to delete item: ") + e.what());
     }
 
+    return Result::success();
+}
+
+std::vector<std::string> ItemService::getCities() {
+    std::vector<std::string> cities;
+    for (const std::string& city : items_.findCities()) {
+        std::string normalized = normalizeCity(city);
+        if (normalized.empty()) continue;
+        bool seen = false;
+        for (const std::string& existing : cities) {
+            if (existing == normalized) seen = true;
+        }
+        if (!seen) cities.push_back(normalized);
+    }
+    std::sort(cities.begin(), cities.end());
+    return cities;
+}
+
+Result ItemService::searchItems(int userId, const std::string& city, const std::string& category,
+                                const std::string& title, std::vector<ItemShort>& items) {
+    items.clear();
+    if (userId <= 0) return Result::error("Not logged in");
+
+    std::string trimmedTitle = trim(title);
+    std::string trimmedCategory = trim(category);
+    if (!trimmedCategory.empty() && !trimmedTitle.empty()) {
+        return Result::error("Choose a category or a title");
+    }
+
+    std::string categoryFilter;
+    if (!trimmedCategory.empty()) {
+        try {
+            categoryFilter = itemCategoryToString(itemCategoryFromString(trimmedCategory));
+        } catch (...) {
+            return Result::error("Invalid category");
+        }
+    }
+
+    items = items_.findItems(userId, normalizeCity(city), categoryFilter, trimmedTitle);
     return Result::success();
 }
 

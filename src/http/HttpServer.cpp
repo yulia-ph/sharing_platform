@@ -298,6 +298,7 @@ void HttpServer::run(int port) {
             return;
         }
 
+        bookings_.refreshItem(item->id);
         nlohmann::json body = {{"id", item->id},
                                {"title", item->title},
                                {"description", item->description},
@@ -399,6 +400,35 @@ void HttpServer::run(int port) {
         sendJson(res, 200, nlohmann::json(items_.getCategories()).dump());
     });
 
+    svr.Get("/api/cities", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        sendJson(res, 200, nlohmann::json(items_.getCities()).dump());
+    });
+
+    svr.Get("/api/search", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        std::string city = req.has_param("city") ? req.get_param_value("city") : "";
+        std::string category = req.has_param("category") ? req.get_param_value("category") : "";
+        std::string title = req.has_param("q") ? req.get_param_value("q") : "";
+
+        std::vector<ItemShort> found;
+        Result result = items_.searchItems(*userId, city, category, title, found);
+        if (!result.ok) {
+            sendResult(res, result, false);
+            return;
+        }
+
+        nlohmann::json list = nlohmann::json::array();
+        for (const ItemShort& item : found) {
+            list.push_back({{"id", item.id}, {"title", item.title}, {"city", item.city}});
+        }
+        sendJson(res, 200, list.dump());
+    });
+
     svr.Post("/api/logout", [this](const auto& req, auto& res) {
         std::string sessionId = getCookie(req, "sessionId");
 
@@ -427,11 +457,8 @@ void HttpServer::run(int port) {
                             {"canPickup", booking.canPickup},
                             {"canReturn", booking.canReturn},
                             {"canCancel", booking.canCancel},
-                            {"canPay", booking.canPay}});
-        }
-        auto notifications = bookings_.popNotifications();
-        if (!notifications.empty()) {
-            list["notifications"] = notifications;
+                            {"canPay", booking.canPay},
+                            {"notice", booking.notice}});
         }
 
         sendJson(res, 200, list.dump());
@@ -456,12 +483,42 @@ void HttpServer::run(int port) {
                             {"canCancel", booking.canCancel},
                             {"canPay", booking.canPay}});
         }
-        auto notifications = bookings_.popNotifications();
-        if (!notifications.empty()) {
-            list["notifications"] = notifications;
-        }
 
         sendJson(res, 200, list.dump());
+    });
+
+    svr.Post("/api/bookings", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        nlohmann::json data;
+        try {
+            data = nlohmann::json::parse(req.body);
+        } catch (...) {
+            sendError(res, 400, "Invalid JSON");
+            return;
+        }
+
+        int itemId = 0;
+        try {
+            if (!data.contains("itemId") || !data.at("itemId").is_number_integer()) {
+                sendError(res, 400, "Invalid item id");
+                return;
+            }
+            itemId = data.at("itemId").get<int>();
+        } catch (...) {
+            sendError(res, 400, "Invalid item id");
+            return;
+        }
+        if (itemId <= 0) {
+            sendError(res, 400, "Invalid item id");
+            return;
+        }
+
+        sendResult(res,
+                   bookings_.createBooking(itemId, *userId, data.value("startDate", ""),
+                                           data.value("endDate", "")),
+                   true);
     });
 
     svr.Post("/api/bookings/cancel", [this](const auto& req, auto& res) {
