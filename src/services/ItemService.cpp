@@ -251,4 +251,8 @@ Result ItemService::searchItems(int userId, const std::string& city, const std::
     return Result::success();
 }
 
+const int ItemService::GetItemsCount() const {
+    return items_.GetNotDeletedItemsCount();
+}
+
 }  // namespace share

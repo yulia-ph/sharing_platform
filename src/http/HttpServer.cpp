@@ -400,6 +400,16 @@ void HttpServer::run(int port) {
         sendJson(res, 200, nlohmann::json(items_.getCategories()).dump());
     });
 
+    svr.Get("/api/statistics", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        nlohmann::json body = {{"users", auth_.GetUsersCount()},
+                               {"items", items_.GetItemsCount()},
+                               {"bookings", bookings_.GetBookingsCount()}};
+        sendJson(res, 200, body.dump());
+    });
+
     svr.Get("/api/cities", [this](const auto& req, auto& res) {
         auto userId = currentUser(auth_, req, res);
         if (!userId) return;
