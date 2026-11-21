@@ -32,7 +32,7 @@ class ItemService {
     std::vector<std::string> getCities();
     Result searchItems(int userId, const std::string& city, const std::string& category,
                        const std::string& title, std::vector<ItemShort>& items);
-    const int GetItemsCount() const;
+    int GetItemsCount() const;
 
    private:
     ItemRepository& items_;

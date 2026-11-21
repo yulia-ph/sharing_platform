@@ -28,7 +28,7 @@ class BookingService {
     Result createBooking(int itemId, int borrowerId, const std::string& startDate,
                          const std::string& endDate);
     void refreshItem(int itemId);
-    const int GetBookingsCount() const;
+    int GetBookingsCount() const;
 
    private:
     Result loadBooking(int userId, int bookingId, bool borrowerOnly, Booking& booking);

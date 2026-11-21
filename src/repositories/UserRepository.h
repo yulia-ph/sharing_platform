@@ -14,7 +14,7 @@ class UserRepository {
     std::optional<User> findByUsername(const std::string& username);
     bool existsUsername(const std::string& username);
     int insert(const User& user);
-    const int GetAllUsersCount();
+    int GetAllUsersCount();
 
    private:
     Database& db_;

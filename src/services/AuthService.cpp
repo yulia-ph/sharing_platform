@@ -75,7 +75,7 @@ std::optional<int> AuthService::userIdBySession(const std::string& sessionId) co
     return it->second;
 }
 
-const int AuthService::GetUsersCount() const {
+int AuthService::GetUsersCount() const {
     return users_.GetAllUsersCount();
 }
 

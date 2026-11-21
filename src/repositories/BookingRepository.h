@@ -24,7 +24,7 @@ class BookingRepository {
                             const std::string& endDate);
     void setNotice(int bookingId, const std::string& notice);
     std::vector<BookingNotice> takeNotices(int borrowerId);
-    const int GetBusyBookingsCount();
+    int GetBusyBookingsCount();
 
    private:
     Database& db_;

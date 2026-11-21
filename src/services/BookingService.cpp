@@ -300,7 +300,7 @@ Result BookingService::createBooking(int itemId, int borrowerId, const std::stri
     return Result::success(id);
 }
 
-const int BookingService::GetBookingsCount() const {
+int BookingService::GetBookingsCount() const {
     return bookings_.GetBusyBookingsCount();
 }
 

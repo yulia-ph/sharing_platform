@@ -19,7 +19,7 @@ class ItemRepository {
     std::vector<std::string> findCities();
     std::vector<ItemShort> findItems(int userId, const std::string& city,
                                      const std::string& category, const std::string& title);
-    const int GetNotDeletedItemsCount();
+    int GetNotDeletedItemsCount();
 
    private:
     Database& db_;
