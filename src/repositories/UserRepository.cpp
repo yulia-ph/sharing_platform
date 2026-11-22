@@ -106,4 +106,25 @@ int UserRepository::insert(const User& user) {
     sqlite3_finalize(stmt);
     return static_cast<int>(sqlite3_last_insert_rowid(db_.handle()));
 }
+
+int UserRepository::GetAllUsersCount() {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "SELECT COUNT(*) FROM users";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("UserRepository::GetAllUsersCount: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    int stepResult = sqlite3_step(stmt);
+    if (stepResult != SQLITE_ROW) {
+        std::string err = sqlite3_errmsg(db_.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("UserRepository::GetAllUsersCount: " + err);
+    }
+
+    int count = column<int>(stmt, 0);
+    sqlite3_finalize(stmt);
+    return count;
+}
 }  // namespace share
