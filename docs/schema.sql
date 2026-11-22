@@ -27,7 +27,11 @@ CREATE TABLE bookings (
     returned_at TEXT,
     amount      REAL,
     paid        INTEGER NOT NULL DEFAULT 0,
+<<<<<<< HEAD
     notice      TEXT, 
+=======
+    notice      TEXT,
+>>>>>>> origin/dev
     created_at  TEXT NOT NULL DEFAULT (date('now')),
     CHECK (start_date <= end_date)
 );

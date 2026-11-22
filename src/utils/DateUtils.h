@@ -7,6 +7,7 @@
 namespace share {
 
 std::string today();
+std::string tomorrow();
 
 bool isValidDate(const std::string& s);
 

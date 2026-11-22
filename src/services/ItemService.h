@@ -29,6 +29,11 @@ class ItemService {
                     const std::string& description, const std::string& category,
                     const std::string& city, double pricePerDay);
     Result deleteItem(int userId, int itemId);
+    std::vector<std::string> getCities();
+    Result searchItems(int userId, const std::string& city, const std::string& category,
+                       const std::string& title, int page, std::vector<ItemShort>& items,
+                       int& pages);
+    int GetItemsCount() const;
 
    private:
     ItemRepository& items_;

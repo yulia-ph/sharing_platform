@@ -75,4 +75,8 @@ std::optional<int> AuthService::userIdBySession(const std::string& sessionId) co
     return it->second;
 }
 
+int AuthService::GetUsersCount() const {
+    return users_.GetAllUsersCount();
+}
+
 }  // namespace share

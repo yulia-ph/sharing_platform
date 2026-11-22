@@ -21,6 +21,7 @@ class AuthService {
     void logoutUser(const std::string& sessionId);
     std::string createSession(int userId);
     std::optional<int> userIdBySession(const std::string& sessionId) const;
+    int GetUsersCount() const;
 
    private:
     UserRepository& users_;

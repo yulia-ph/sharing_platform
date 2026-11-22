@@ -12,6 +12,17 @@ std::string today() {
     return std::string(buf);
 }
 
+std::string tomorrow() {
+    auto now = std::chrono::system_clock::now();
+    auto next_day = now + std::chrono::hours(24);
+    std::time_t t = std::chrono::system_clock::to_time_t(next_day);
+    std::tm tm = *std::localtime(&t);
+
+    char buf[11];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d", &tm);
+    return std::string(buf);
+}
+
 bool isValidDate(const std::string& s) {
     if (s.size() != 10) return false;
 
