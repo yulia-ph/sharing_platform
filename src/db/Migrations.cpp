@@ -150,10 +150,97 @@ static void ensureMoneyColumns(Database& db) {
             db.exec("ALTER TABLE bookings DROP COLUMN amount_quarters");
         }
 
+        if (!tableHasColumn(db, "bookings", "notice")) {
+            db.exec("ALTER TABLE bookings ADD COLUMN notice TEXT");
+        }
+
         db.commit();
     } catch (...) {
         db.rollback();
         throw;
+    }
+}
+
+static void ensureTitleFtsIndex(Database& db) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* checkSql =
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='items_title_fts';";
+    if (sqlite3_prepare_v2(db.handle(), checkSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("Migration error (prepare title fts): ") +
+                                 sqlite3_errmsg(db.handle()));
+    }
+    int stepResult = sqlite3_step(stmt);
+    bool hasFts = (stepResult == SQLITE_ROW);
+    if (stepResult != SQLITE_ROW && stepResult != SQLITE_DONE) {
+        std::string err = sqlite3_errmsg(db.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("Migration error (read title fts): " + err);
+    }
+    sqlite3_finalize(stmt);
+
+    if (!hasFts) {
+        db.beginTransaction();
+        try {
+            db.exec(R"(
+                CREATE VIRTUAL TABLE items_title_fts USING fts5(
+                    title,
+                    content='items',
+                    content_rowid='id',
+                    tokenize='porter unicode61'
+                );
+
+                CREATE TRIGGER items_title_ai AFTER INSERT ON items BEGIN
+                    INSERT INTO items_title_fts(rowid, title)
+                    VALUES (new.id, new.title);
+                END;
+
+                CREATE TRIGGER items_title_ad AFTER DELETE ON items BEGIN
+                    INSERT INTO items_title_fts(items_title_fts, rowid, title)
+                    VALUES('delete', old.id, old.title);
+                END;
+
+                CREATE TRIGGER items_title_au AFTER UPDATE OF title ON items BEGIN
+                    INSERT INTO items_title_fts(items_title_fts, rowid, title)
+                    VALUES('delete', old.id, old.title);
+                    INSERT INTO items_title_fts(rowid, title)
+                    VALUES (new.id, new.title);
+                END;
+
+                INSERT INTO items_title_fts(items_title_fts) VALUES('rebuild');
+            )");
+            db.commit();
+        } catch (...) {
+            db.rollback();
+            throw;
+        }
+    }
+
+    const char* checkVocabSql =
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='title_vocab';";
+    if (sqlite3_prepare_v2(db.handle(), checkVocabSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("Migration error (prepare vocab): ") +
+                                 sqlite3_errmsg(db.handle()));
+    }
+    stepResult = sqlite3_step(stmt);
+    bool hasVocab = (stepResult == SQLITE_ROW);
+    if (stepResult != SQLITE_ROW && stepResult != SQLITE_DONE) {
+        std::string err = sqlite3_errmsg(db.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("Migration error (read vocab): " + err);
+    }
+    sqlite3_finalize(stmt);
+
+    if (!hasVocab) {
+        db.beginTransaction();
+        try {
+            db.exec(R"(
+                CREATE VIRTUAL TABLE title_vocab USING spellfix1;
+            )");
+            db.commit();
+        } catch (...) {
+            db.rollback();
+            throw;
+        }
     }
 }
 
@@ -188,6 +275,7 @@ void runMigrations(Database& db) {
             returned_at TEXT,
             amount      REAL,
             paid        INTEGER NOT NULL DEFAULT 0,
+            notice      TEXT,
             created_at  TEXT NOT NULL DEFAULT (date('now')),
             CHECK (start_date <= end_date)
         );
@@ -204,6 +292,7 @@ void runMigrations(Database& db) {
     ensureCityColumn(db);
     ensureOverdueStatus(db);
     ensureMoneyColumns(db);
+    ensureTitleFtsIndex(db);
 }
 
 }  // namespace share

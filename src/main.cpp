@@ -1,3 +1,5 @@
+#include <sqlite3.h>
+
 #include <iostream>
 
 #include "AuthService.h"
@@ -7,8 +9,12 @@
 #include "ItemService.h"
 #include "Migrations.h"
 
+extern "C" int sqlite3_spellfix_init(sqlite3* db, char** pzErrMsg,
+                                     const sqlite3_api_routines* pApi);
+
 int main() {
     using namespace share;
+    sqlite3_auto_extension(reinterpret_cast<void (*)()>(sqlite3_spellfix_init));
 
     try {
         Database db("shared.db");
@@ -16,6 +22,7 @@ int main() {
         UserRepository users(db);
         BookingRepository bookingsRepo(db);
         ItemRepository itemsRepo(db);
+        itemsRepo.populateTitleVocab();
         AuthService auth(users);
         ItemService items(itemsRepo, bookingsRepo, db);
         BookingService bookings(bookingsRepo, itemsRepo);

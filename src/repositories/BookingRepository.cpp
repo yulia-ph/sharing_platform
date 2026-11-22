@@ -41,6 +41,7 @@ std::vector<UserBooking> readUserBookings(sqlite3_stmt* stmt, const std::string&
             booking.amount = column<double>(stmt, 8);
         }
         booking.paid = column<int>(stmt, 9) != 0;
+        booking.itemId = column<int>(stmt, 10);
         bookings.push_back(booking);
     }
 
@@ -94,7 +95,7 @@ std::vector<UserBooking> BookingRepository::findBookingsByBorrowerId(int borrowe
     const char* sql =
         "SELECT bookings.id, items.title, items.city, owners.username, "
         "bookings.start_date, bookings.end_date, bookings.status, items.price_per_day, "
-        "bookings.amount, bookings.paid "
+        "bookings.amount, bookings.paid, bookings.item_id "
         "FROM bookings "
         "JOIN items ON items.id = bookings.item_id "
         "JOIN users AS owners ON owners.id = items.owner_id "
@@ -114,7 +115,7 @@ std::vector<UserBooking> BookingRepository::findBookingsByOwnerId(int ownerId) {
     const char* sql =
         "SELECT bookings.id, items.title, items.city, borrowers.username, "
         "bookings.start_date, bookings.end_date, bookings.status, items.price_per_day, "
-        "bookings.amount, bookings.paid "
+        "bookings.amount, bookings.paid, bookings.item_id "
         "FROM bookings "
         "JOIN items ON items.id = bookings.item_id "
         "JOIN users AS borrowers ON borrowers.id = bookings.borrower_id "
@@ -160,7 +161,7 @@ std::optional<Booking> BookingRepository::findBookingById(int bookingId) {
         booking.returnedAt = column<std::optional<std::string>>(stmt, 7);
         booking.createdAt = column<std::string>(stmt, 8);
         booking.pricePerDay = column<double>(stmt, 9);
-        booking.amount=column<std::optional<double>>(stmt, 10);
+        booking.amount = column<std::optional<double>>(stmt, 10);
         booking.paid = column<int>(stmt, 11) != 0;
         result = booking;
     }
@@ -269,6 +270,136 @@ bool BookingRepository::markPaid(int bookingId) {
     int changed = sqlite3_changes(db_.handle());
     sqlite3_finalize(stmt);
     return changed > 0;
+}
+
+int BookingRepository::insertBooking(const Booking& booking) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "INSERT INTO bookings (item_id, borrower_id, start_date, end_date, status, created_at) "
+        "VALUES (?, ?, ?, ?, 'reserved', ?)";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("BookingRepository::insertBooking: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    sqlite3_bind_int(stmt, 1, booking.itemId);
+    sqlite3_bind_int(stmt, 2, booking.borrowerId);
+    sqlite3_bind_text(stmt, 3, booking.startDate.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 4, booking.endDate.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 5, booking.createdAt.c_str(), -1, SQLITE_TRANSIENT);
+
+    int stepResult = sqlite3_step(stmt);
+    if (stepResult != SQLITE_DONE) {
+        std::string err = sqlite3_errmsg(db_.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("BookingRepository::insertBooking: " + err);
+    }
+
+    sqlite3_finalize(stmt);
+    return static_cast<int>(sqlite3_last_insert_rowid(db_.handle()));
+}
+
+void BookingRepository::updateBookingDates(int bookingId, const std::string& startDate,
+                                           const std::string& endDate) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "UPDATE bookings SET start_date = ?, end_date = ? WHERE id = ? AND status = 'reserved'";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("BookingRepository::updateBookingDates: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    sqlite3_bind_text(stmt, 1, startDate.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, endDate.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, bookingId);
+
+    int stepResult = sqlite3_step(stmt);
+    if (stepResult != SQLITE_DONE) {
+        std::string err = sqlite3_errmsg(db_.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("BookingRepository::updateBookingDates: " + err);
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+void BookingRepository::setNotice(int bookingId, const std::string& notice) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "UPDATE bookings SET notice = ? WHERE id = ?";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("BookingRepository::setNotice: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    sqlite3_bind_text(stmt, 1, notice.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, bookingId);
+
+    int stepResult = sqlite3_step(stmt);
+    if (stepResult != SQLITE_DONE) {
+        std::string err = sqlite3_errmsg(db_.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("BookingRepository::setNotice: " + err);
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+std::vector<BookingNotice> BookingRepository::takeNotices(int borrowerId) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT id, notice FROM bookings "
+        "WHERE borrower_id = ? AND notice IS NOT NULL AND notice != '' ORDER BY id";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("BookingRepository::takeNotices: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    sqlite3_bind_int(stmt, 1, borrowerId);
+    std::vector<BookingNotice> notices;
+
+    while (true) {
+        int stepResult = sqlite3_step(stmt);
+        if (stepResult == SQLITE_DONE) break;
+        if (stepResult != SQLITE_ROW) {
+            std::string err = sqlite3_errmsg(db_.handle());
+            sqlite3_finalize(stmt);
+            throw std::runtime_error("BookingRepository::takeNotices: " + err);
+        }
+
+        BookingNotice notice;
+        notice.bookingId = column<int>(stmt, 0);
+        notice.text = column<std::string>(stmt, 1);
+        notices.push_back(notice);
+    }
+    sqlite3_finalize(stmt);
+    return notices;
+}
+
+int BookingRepository::GetBusyBookingsCount() {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT COUNT(*) FROM bookings WHERE status IN ('reserved', 'active', 'overdue', "
+        "'returned')";
+
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(std::string("BookingRepository::GetBusyBookingsCount: ") +
+                                 sqlite3_errmsg(db_.handle()));
+    }
+
+    int stepResult = sqlite3_step(stmt);
+    if (stepResult != SQLITE_ROW) {
+        std::string err = sqlite3_errmsg(db_.handle());
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("BookingRepository::GetBusyBookingsCount: " + err);
+    }
+
+    int count = column<int>(stmt, 0);
+    sqlite3_finalize(stmt);
+    return count;
 }
 
 }  // namespace share
