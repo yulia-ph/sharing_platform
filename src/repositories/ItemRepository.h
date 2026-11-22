@@ -18,7 +18,10 @@ class ItemRepository {
     bool deleteItem(int itemId);
     std::vector<std::string> findCities();
     std::vector<ItemShort> findItems(int userId, const std::string& city,
-                                     const std::string& category, const std::string& title);
+                                     const std::string& category, const std::string& title,
+                                     int limit, int offset);
+    int countItems(int userId, const std::string& city, const std::string& category,
+                   const std::string& title);
     int GetNotDeletedItemsCount();
 
    private:

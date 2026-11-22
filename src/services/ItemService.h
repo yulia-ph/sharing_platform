@@ -31,7 +31,8 @@ class ItemService {
     Result deleteItem(int userId, int itemId);
     std::vector<std::string> getCities();
     Result searchItems(int userId, const std::string& city, const std::string& category,
-                       const std::string& title, std::vector<ItemShort>& items);
+                       const std::string& title, int page, std::vector<ItemShort>& items,
+                       int& pages);
     int GetItemsCount() const;
 
    private:

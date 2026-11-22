@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 #include "BookingState.h"
@@ -25,6 +26,8 @@ static std::string validateCity(const std::string& city) {
     if (trim(city).empty()) return "City cannot be empty";
     return "";
 }
+
+constexpr int searchPageSize = 15;
 
 static std::string normalizeCity(const std::string& city) {
     if (city.empty()) return "";
@@ -228,9 +231,14 @@ std::vector<std::string> ItemService::getCities() {
 }
 
 Result ItemService::searchItems(int userId, const std::string& city, const std::string& category,
-                                const std::string& title, std::vector<ItemShort>& items) {
+                                const std::string& title, int page, std::vector<ItemShort>& items,
+                                int& pages) {
     items.clear();
+    pages = 0;
     if (userId <= 0) return Result::error("Not logged in");
+    if (page < 1 || page > std::numeric_limits<int>::max() / searchPageSize) {
+        return Result::error("Invalid page");
+    }
 
     std::string trimmedTitle = trim(title);
     std::string trimmedCategory = trim(category);
@@ -247,7 +255,12 @@ Result ItemService::searchItems(int userId, const std::string& city, const std::
         }
     }
 
-    items = items_.findItems(userId, normalizeCity(city), categoryFilter, trimmedTitle);
+    const std::string cityFilter = normalizeCity(city);
+    const int total = items_.countItems(userId, cityFilter, categoryFilter, trimmedTitle);
+    pages = total == 0 ? 0 : (total + searchPageSize - 1) / searchPageSize;
+    const int offset = (page - 1) * searchPageSize;
+    items = items_.findItems(userId, cityFilter, categoryFilter, trimmedTitle, searchPageSize,
+                             offset);
     return Result::success();
 }
 

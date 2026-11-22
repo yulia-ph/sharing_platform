@@ -425,8 +425,26 @@ void HttpServer::run(int port) {
         std::string category = req.has_param("category") ? req.get_param_value("category") : "";
         std::string title = req.has_param("q") ? req.get_param_value("q") : "";
 
+        int page = 1;
+        if (req.has_param("page")) {
+            const std::string value = req.get_param_value("page");
+            try {
+                size_t used = 0;
+                int parsed = std::stoi(value, &used);
+                if (used != value.size() || parsed < 1) {
+                    sendError(res, 400, "Invalid page");
+                    return;
+                }
+                page = parsed;
+            } catch (...) {
+                sendError(res, 400, "Invalid page");
+                return;
+            }
+        }
+
         std::vector<ItemShort> found;
-        Result result = items_.searchItems(*userId, city, category, title, found);
+        int pages = 0;
+        Result result = items_.searchItems(*userId, city, category, title, page, found, pages);
         if (!result.ok) {
             sendResult(res, result, false);
             return;
@@ -436,7 +454,8 @@ void HttpServer::run(int port) {
         for (const ItemShort& item : found) {
             list.push_back({{"id", item.id}, {"title", item.title}, {"city", item.city}});
         }
-        sendJson(res, 200, list.dump());
+        nlohmann::json body = {{"items", list}, {"page", page}, {"pages", pages}};
+        sendJson(res, 200, body.dump());
     });
 
     svr.Post("/api/logout", [this](const auto& req, auto& res) {
