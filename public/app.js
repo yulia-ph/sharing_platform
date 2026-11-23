@@ -43,6 +43,10 @@ function showPage(name) {
     });
     if (name === 'items') showItemsList();
     if (name === 'bookings') showBookings();
+    if (name === 'search') {
+        updateSearchButton();
+        loadSearchOptions();
+    }
 }
 
 function showApp(username) {
@@ -682,6 +686,104 @@ async function confirmCancelBooking() {
     } finally {
         bookingActionBusy = false;
         button.disabled = false;
+    }
+}
+
+// ============ Search ============
+
+let searchOptionsLoaded = false;
+let selectedCategory = '';
+
+async function loadSearchOptions() {
+    if (searchOptionsLoaded) return;
+    try {
+        const cities = await requestJson('/api/cities');
+        const select = document.getElementById('search-city');
+        cities.forEach((city) => {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            select.appendChild(option);
+        });
+
+        const categories = await requestJson('/api/categories');
+        const grid = document.getElementById('category-grid');
+        grid.replaceChildren();
+        categories.forEach((name) => {
+            const tile = element('button', 'category-tile', name);
+            tile.type = 'button';
+            tile.dataset.category = name;
+            tile.addEventListener('click', () => selectCategory(name));
+            grid.appendChild(tile);
+        });
+
+        searchOptionsLoaded = true;
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('search-message', e.message || 'Server connection error');
+    }
+}
+
+function updateSearchButton() {
+    const input = document.getElementById('search-input');
+    document.getElementById('search-button').disabled = input.value.trim().length === 0;
+}
+
+function selectCategory(name) {
+    if (selectedCategory === name) {
+        selectedCategory = '';
+    } else {
+        selectedCategory = name;
+        // Категория и строка названия взаимоисключающие, поэтому поле очищаем.
+        document.getElementById('search-input').value = '';
+        updateSearchButton();
+    }
+
+    document.querySelectorAll('.category-tile').forEach((tile) => {
+        tile.classList.toggle('is-selected', tile.dataset.category === selectedCategory);
+    });
+
+    if (selectedCategory) {
+        runSearch({category: selectedCategory, title: ''});
+    } else {
+        clearMessage('search-message');
+    }
+}
+
+function submitSearch(event) {
+    event.preventDefault();
+
+    const title = document.getElementById('search-input').value.trim();
+    if (!title) return;
+
+    selectedCategory = '';
+    document.querySelectorAll('.category-tile').forEach((tile) => {
+        tile.classList.remove('is-selected');
+    });
+
+    runSearch({category: '', title});
+}
+
+async function runSearch({category, title}) {
+    const city = document.getElementById('search-city').value;
+    clearMessage('search-message');
+
+    const params = new URLSearchParams();
+    if (city) params.set('city', city);
+    if (category) params.set('category', category);
+    if (title) params.set('q', title);
+
+    const button = document.getElementById('search-button');
+    button.disabled = true;
+    try {
+        const data = await requestJson('/api/search?' + params.toString());
+        // Список результатов подключим следующим шагом.
+        console.log('search results', data);
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('search-message', e.message || 'Server connection error');
+    } finally {
+        updateSearchButton();
     }
 }
 

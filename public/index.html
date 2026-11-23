@@ -10,7 +10,6 @@
 </head>
 
 <body>
-    //экран регистрации
     <div id="auth-shell" class="shell">
         <aside class="brand">
             <svg class="orca orca-mark" viewBox="0 0 157 183" aria-hidden="true">
@@ -81,7 +80,6 @@
         </main>
     </div>
 
-    //Главный экран после входа
     <div id="app-screen" class="app">
         <aside class="side">
             <div class="side-brand">
@@ -238,11 +236,29 @@
                 <p class="eyebrow">Search</p>
                 <h1>Find a thing</h1>
                 <p class="lead">Search across what other people have shared is the next piece.</p>
+
+                <form id="search-form" class="search-row" autocomplete="off">
+                    <div class="search-field">
+                        <input type="text" id="search-input" placeholder="Search on ORCA">
+                        <button type="submit" id="search-button" class="search-submit" disabled>Search</button>
+                    </div>
+                    <div class="search-city">
+                        <label for="search-city">City</label>
+                        <select id="search-city">
+                            <option value="">Default</option>
+                        </select>
+                    </div>
+                </form>
+
+                <div id="search-message" class="message"></div>
+
+                <p class="category-hint">Or jump straight to one of these categories:</p>
+
+                <div id="category-grid" class="category-grid"></div>
             </section>
         </main>
     </div>
 
-    //всплывающее окно для подтверждения удаления вещи
     <div id="item-delete-dialog" class="modal" hidden>
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="item-delete-heading">
             <h2 id="item-delete-heading">Delete this item?</h2>
