@@ -203,6 +203,11 @@ Result ItemService::deleteItem(int userId, int itemId) {
             }
             if (booking.status == BookingStatus::Reserved) {
                 bookings_.updateBookingStatus(booking.id, "cancelled");
+                bookings_.setNotice(
+                    booking.id,
+                    "Sorry! Booking of " + item->title + " on days from " + booking.startDate +
+                        " to " + booking.endDate +
+                        " has been cancelled because the item was removed");
             }
         }
 

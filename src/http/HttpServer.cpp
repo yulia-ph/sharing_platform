@@ -452,7 +452,10 @@ void HttpServer::run(int port) {
 
         nlohmann::json list = nlohmann::json::array();
         for (const ItemShort& item : found) {
-            list.push_back({{"id", item.id}, {"title", item.title}, {"city", item.city}});
+            list.push_back({{"id", item.id},
+                            {"title", item.title},
+                            {"city", item.city},
+                            {"status", items_.availability(item.id)}});
         }
         nlohmann::json body = {{"items", list}, {"page", page}, {"pages", pages}};
         sendJson(res, 200, body.dump());
@@ -510,7 +513,8 @@ void HttpServer::run(int port) {
                             {"amount", booking.amount},
                             {"paid", booking.paid},
                             {"canCancel", booking.canCancel},
-                            {"canPay", booking.canPay}});
+                            {"canPay", booking.canPay},
+                            {"notice", booking.notice}});
         }
 
         sendJson(res, 200, list.dump());
@@ -584,6 +588,45 @@ void HttpServer::run(int port) {
         auto bookingId = bodyBookingId(req, res);
         if (!bookingId) return;
         sendResult(res, bookings_.pickup(*userId, *bookingId), false);
+    });
+
+    svr.Post("/api/notices/read", [this](const auto& req, auto& res) {
+        auto userId = currentUser(auth_, req, res);
+        if (!userId) return;
+
+        nlohmann::json data;
+        try {
+            data = nlohmann::json::parse(req.body);
+        } catch (...) {
+            sendError(res, 400, "Invalid JSON");
+            return;
+        }
+
+        if (!data.contains("bookingIds") || !data.at("bookingIds").is_array()) {
+            sendError(res, 400, "Invalid booking id");
+            return;
+        }
+
+        std::vector<int> bookingIds;
+        try {
+            for (const nlohmann::json& item : data.at("bookingIds")) {
+                if (!item.is_number_integer()) {
+                    sendError(res, 400, "Invalid booking id");
+                    return;
+                }
+                int bookingId = item.get<int>();
+                if (bookingId <= 0) {
+                    sendError(res, 400, "Invalid booking id");
+                    return;
+                }
+                bookingIds.push_back(bookingId);
+            }
+        } catch (...) {
+            sendError(res, 400, "Invalid booking id");
+            return;
+        }
+
+        sendResult(res, bookings_.clearNotices(*userId, bookingIds), false);
     });
 
     svr.listen("localhost", port);

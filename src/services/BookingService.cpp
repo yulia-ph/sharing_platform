@@ -16,6 +16,18 @@ std::string cancelledNotice(const std::string& title, const std::string& startDa
            " has been cancelled due to the overdue of previous booking";
 }
 
+std::string missedPickupNotice(const std::string& title, const std::string& startDate,
+                               const std::string& endDate) {
+    return "Sorry! Booking of " + title + " on days from " + startDate + " to " + endDate +
+           " has been cancelled because it was not picked up";
+}
+
+std::string cancelledByNotice(const std::string& title, const std::string& startDate,
+                              const std::string& endDate, const std::string& who) {
+    return "Sorry! Booking of " + title + " on days from " + startDate + " to " + endDate +
+           " has been cancelled by the " + who;
+}
+
 bool rangesOverlap(const std::string& startA, const std::string& endA, const std::string& startB,
                    const std::string& endB) {
     return startA <= endB && startB <= endA;
@@ -37,6 +49,8 @@ void BookingService::settleUncollected(UserBooking& booking) {
     const double amount = bookingCharge(BookingStatus::Reserved, booking.startDate, booking.endDate,
                                         currentDay, booking.pricePerDay);
     bookings_.settleUncollected(booking.id, amount);
+    bookings_.setNotice(booking.id,
+                        missedPickupNotice(booking.title, booking.startDate, booking.endDate));
     booking.status = BookingStatus::Cancelled;
     booking.amount = amount;
     booking.billFrozen = true;
@@ -85,6 +99,14 @@ void BookingService::refreshListedItems(const std::vector<UserBooking>& bookings
 
 void BookingService::attachNotices(int userId, std::vector<UserBooking>& bookings) {
     for (const BookingNotice& notice : bookings_.takeNotices(userId)) {
+        for (UserBooking& booking : bookings) {
+            if (booking.id == notice.bookingId) booking.notice = notice.text;
+        }
+    }
+}
+
+void BookingService::attachOwnerNotices(int userId, std::vector<UserBooking>& bookings) {
+    for (const BookingNotice& notice : bookings_.takeOwnerNotices(userId)) {
         for (UserBooking& booking : bookings) {
             if (booking.id == notice.bookingId) booking.notice = notice.text;
         }
@@ -148,6 +170,8 @@ void BookingService::refreshItem(int itemId) {
         const double amount = bookingCharge(BookingStatus::Reserved, full->startDate, full->endDate,
                                             currentDay, full->pricePerDay);
         bookings_.settleUncollected(booking.id, amount);
+        bookings_.setNotice(booking.id,
+                            missedPickupNotice(title, full->startDate, full->endDate));
     }
 }
 
@@ -169,6 +193,7 @@ std::vector<UserBooking> BookingService::findIncomingBookings(int userId) {
     refreshListedItems(bookings);
     bookings = bookings_.findBookingsByOwnerId(userId);
     for (UserBooking& booking : bookings) present(booking, false);
+    attachOwnerNotices(userId, bookings);
     return bookings;
 }
 
@@ -239,6 +264,10 @@ Result BookingService::cancel(int userId, int bookingId) {
         const double amount = bookingCharge(BookingStatus::Reserved, booking.startDate,
                                             booking.endDate, today(), booking.pricePerDay);
         bookings_.settleUncollected(booking.id, amount);
+        auto item = items_.findItemById(booking.itemId);
+        const std::string title = item ? item->title : "item";
+        bookings_.setNotice(booking.id,
+                            missedPickupNotice(title, booking.startDate, booking.endDate));
         return Result::error("Booking cannot be cancelled");
     }
 
@@ -247,6 +276,21 @@ Result BookingService::cancel(int userId, int bookingId) {
     }
 
     bookings_.updateBookingStatus(bookingId, bookingStatusToString(BookingStatus::Cancelled));
+    auto item = items_.findItemById(booking.itemId);
+    const std::string title = item ? item->title : "item";
+    if (userId == booking.ownerId) {
+        bookings_.setNotice(booking.id,
+                            cancelledByNotice(title, booking.startDate, booking.endDate, "owner"));
+    } else {
+        bookings_.setOwnerNotice(
+            booking.id, cancelledByNotice(title, booking.startDate, booking.endDate, "borrower"));
+    }
+    return Result::success();
+}
+
+Result BookingService::clearNotices(int userId, const std::vector<int>& bookingIds) {
+    if (userId <= 0) return Result::error("Not logged in");
+    for (int bookingId : bookingIds) bookings_.clearNotice(bookingId, userId);
     return Result::success();
 }
 

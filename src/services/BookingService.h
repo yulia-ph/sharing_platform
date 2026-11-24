@@ -27,6 +27,7 @@ class BookingService {
     Result pay(int userId, int bookingId);
     Result createBooking(int itemId, int borrowerId, const std::string& startDate,
                          const std::string& endDate);
+    Result clearNotices(int userId, const std::vector<int>& bookingIds);
     void refreshItem(int itemId);
     int GetBookingsCount() const;
 
@@ -37,6 +38,7 @@ class BookingService {
     void present(UserBooking& booking, bool borrower);
     void refreshListedItems(const std::vector<UserBooking>& bookings);
     void attachNotices(int userId, std::vector<UserBooking>& bookings);
+    void attachOwnerNotices(int userId, std::vector<UserBooking>& bookings);
 
     BookingRepository& bookings_;
     ItemRepository& items_;
