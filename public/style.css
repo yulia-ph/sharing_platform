@@ -432,6 +432,14 @@ select:focus {
     border-color: #c9c0b2;
 }
 
+.item-card-static {
+    cursor: default;
+}
+
+.item-card-static:hover {
+    border-color: var(--line);
+}
+
 .item-card-title {
     display: block;
     font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
@@ -1140,6 +1148,53 @@ select:focus {
 
 .category-tile.is-selected {
     border-color: var(--ink);
+}
+
+/* Введённый запрос остаётся в строке поиска, но светлее */
+.search-field input.is-result {
+    color: var(--muted);
+    cursor: default;
+}
+
+#search-results-view {
+    margin-bottom: 32px;
+}
+
+.search-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.search-pagination .back-btn {
+    margin-bottom: 0;
+}
+
+.next-page-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding: 0;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.next-page-btn::after {
+    content: "→";
+    font-size: 18px;
+    line-height: 1;
+}
+
+.next-page-btn:hover {
+    color: var(--ink-soft);
 }
 
 @media (max-width: 860px) {

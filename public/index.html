@@ -233,9 +233,10 @@
             </section>
 
             <section id="page-search" class="page">
+                <button type="button" id="search-back" class="back-btn" hidden>Back to categories</button>
                 <p class="eyebrow">Search</p>
                 <h1>Find a thing</h1>
-                <p class="lead">Search across what other people have shared is the next piece.</p>
+                <p class="lead">Look across what other people have shared, narrow it by city or category, then book the days you need.</p>
 
                 <form id="search-form" class="search-row" autocomplete="off">
                     <div class="search-field">
@@ -252,9 +253,15 @@
 
                 <div id="search-message" class="message"></div>
 
-                <p class="category-hint">Or jump straight to one of these categories:</p>
+                <div id="search-results-view" hidden>
+                    <div id="search-results" class="item-list"></div>
+                    <div id="search-pagination" class="search-pagination"></div>
+                </div>
 
-                <div id="category-grid" class="category-grid"></div>
+                <div id="search-browse">
+                    <p id="category-hint" class="category-hint">Or jump straight to one of these categories:</p>
+                    <div id="category-grid" class="category-grid"></div>
+                </div>
             </section>
         </main>
     </div>

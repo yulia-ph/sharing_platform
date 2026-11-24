@@ -44,7 +44,7 @@ function showPage(name) {
     if (name === 'items') showItemsList();
     if (name === 'bookings') showBookings();
     if (name === 'search') {
-        updateSearchButton();
+        showSearchBrowse();
         loadSearchOptions();
     }
 }
@@ -693,6 +693,10 @@ async function confirmCancelBooking() {
 
 let searchOptionsLoaded = false;
 let selectedCategory = '';
+let searchRequest = 0;
+let searchQuery = null;
+let searchPage = 1;
+let searchPages = 0;
 
 async function loadSearchOptions() {
     if (searchOptionsLoaded) return;
@@ -729,61 +733,154 @@ function updateSearchButton() {
     document.getElementById('search-button').disabled = input.value.trim().length === 0;
 }
 
-function selectCategory(name) {
-    if (selectedCategory === name) {
-        selectedCategory = '';
-    } else {
-        selectedCategory = name;
-        // Категория и строка названия взаимоисключающие, поэтому поле очищаем.
-        document.getElementById('search-input').value = '';
-        updateSearchButton();
-    }
-
+function markSelectedCategory() {
     document.querySelectorAll('.category-tile').forEach((tile) => {
         tile.classList.toggle('is-selected', tile.dataset.category === selectedCategory);
     });
+}
 
-    if (selectedCategory) {
-        runSearch({category: selectedCategory, title: ''});
-    } else {
-        clearMessage('search-message');
+function selectCategory(name) {
+    if (selectedCategory === name) {
+        // Повторное нажатие снимает выбор и возвращает первую страницу поиска.
+        showSearchBrowse();
+        return;
     }
+    selectedCategory = name;
+    markSelectedCategory();
+    runSearch({
+        city: document.getElementById('search-city').value,
+        category: selectedCategory,
+        title: ''
+    });
 }
 
 function submitSearch(event) {
     event.preventDefault();
 
-    const title = document.getElementById('search-input').value.trim();
+    const input = document.getElementById('search-input');
+    // Enter на странице результатов с нетронутой строкой просто повторяет поиск.
+    if (input.classList.contains('is-result') && searchQuery) {
+        runSearch(searchQuery, 1);
+        return;
+    }
+
+    const title = input.value.trim();
     if (!title) return;
 
+    // Поиск по названию сбрасывает выбранную категорию (сервер не принимает оба фильтра).
     selectedCategory = '';
-    document.querySelectorAll('.category-tile').forEach((tile) => {
-        tile.classList.remove('is-selected');
-    });
-
-    runSearch({category: '', title});
+    markSelectedCategory();
+    runSearch({city: document.getElementById('search-city').value, category: '', title});
 }
 
-async function runSearch({category, title}) {
-    const city = document.getElementById('search-city').value;
+// Показываем на второй странице поиска то, что ввёл пользователь: название или категорию.
+// Текст остаётся в строке, но светлее; его можно стереть и искать заново.
+function showSearchFieldText(query) {
+    const input = document.getElementById('search-input');
+    input.value = query.category || query.title || '';
+    input.classList.add('is-result');
+    updateSearchButton();
+}
+
+// Возвращаем страницу поиска в исходное состояние (первая страница с категориями).
+function showSearchBrowse() {
+    searchRequest++;
+    searchQuery = null;
+    searchPage = 1;
+    searchPages = 0;
+    selectedCategory = '';
+    markSelectedCategory();
+    document.getElementById('search-city').value = '';
+    resetSearchFieldText();
+    document.getElementById('search-back').hidden = true;
+    document.getElementById('search-results-view').hidden = true;
+    document.getElementById('search-browse').hidden = false;
+    document.getElementById('search-results').replaceChildren();
+    document.getElementById('search-pagination').replaceChildren();
+    clearMessage('search-message');
+}
+
+// Возвращаем строку поиска в исходное состояние первой страницы.
+function resetSearchFieldText() {
+    const input = document.getElementById('search-input');
+    input.value = '';
+    input.classList.remove('is-result');
+    updateSearchButton();
+}
+
+function renderSearchResults(data) {
+    const box = document.getElementById('search-results');
+    box.replaceChildren();
+    if (!data.items.length) {
+        box.appendChild(element('p', 'empty-note', 'Nothing found for this search.'));
+        return;
+    }
+
+    data.items.forEach((item) => {
+        // Карточка выглядит точь-в-точь как в «My items», но это чужая вещь:
+        // открывать её детальную страницу с Edit/Delete нельзя.
+        const card = element('div', 'item-card item-card-static');
+        const text = element('span');
+        text.appendChild(element('span', 'item-card-title', item.title));
+        text.appendChild(element('span', 'item-card-city', item.city));
+        card.appendChild(text);
+        card.appendChild(element(
+            'span', 'pill pill-' + (item.status === 'busy' ? 'busy' : 'free'),
+            statusLabel(item.status)));
+        box.appendChild(card);
+    });
+}
+
+function renderPagination() {
+    const box = document.getElementById('search-pagination');
+    box.replaceChildren();
+    if (searchPages <= 1) return;
+
+    if (searchPage > 1) {
+        const previous = element('button', 'back-btn', 'Previous page');
+        previous.type = 'button';
+        previous.addEventListener('click', () => runSearch(searchQuery, searchPage - 1));
+        box.appendChild(previous);
+    }
+
+    if (searchPage < searchPages) {
+        const next = element('button', 'next-page-btn', 'Next page');
+        next.type = 'button';
+        next.addEventListener('click', () => runSearch(searchQuery, searchPage + 1));
+        box.appendChild(next);
+    }
+}
+
+async function runSearch(query, page) {
+    searchQuery = query;
+    searchPage = page || 1;
     clearMessage('search-message');
 
     const params = new URLSearchParams();
-    if (city) params.set('city', city);
-    if (category) params.set('category', category);
-    if (title) params.set('q', title);
+    if (query.city) params.set('city', query.city);
+    if (query.category) params.set('category', query.category);
+    if (query.title) params.set('q', query.title);
+    if (searchPage > 1) params.set('page', String(searchPage));
 
+    const requestId = ++searchRequest;
     const button = document.getElementById('search-button');
     button.disabled = true;
     try {
         const data = await requestJson('/api/search?' + params.toString());
-        // Список результатов подключим следующим шагом.
-        console.log('search results', data);
+        if (requestId !== searchRequest) return;
+        searchPage = data.page;
+        searchPages = data.pages;
+        showSearchFieldText(query);
+        document.getElementById('search-back').hidden = false;
+        document.getElementById('search-browse').hidden = true;
+        document.getElementById('search-results-view').hidden = false;
+        renderSearchResults(data);
+        renderPagination();
     } catch (e) {
-        if (e.status === 401) return;
+        if (e.status === 401 || requestId !== searchRequest) return;
         showError('search-message', e.message || 'Server connection error');
     } finally {
-        updateSearchButton();
+        if (requestId === searchRequest) updateSearchButton();
     }
 }
 
@@ -814,6 +911,18 @@ document.getElementById('booking-cancel-no').addEventListener('click', closeCanc
 document.getElementById('booking-cancel-yes').addEventListener('click', confirmCancelBooking);
 document.getElementById('booking-cancel-dialog').addEventListener('click', (event) => {
     if (event.target.id === 'booking-cancel-dialog') closeCancelDialog();
+});
+document.getElementById('search-back').addEventListener('click', () => showSearchBrowse());
+document.getElementById('search-form').addEventListener('submit', submitSearch);
+document.getElementById('search-input').addEventListener('input', (event) => {
+    // Как только пользователь правит строку, показной текст снова становится обычным.
+    event.target.classList.remove('is-result');
+    updateSearchButton();
+});
+document.getElementById('search-city').addEventListener('change', () => {
+    if (!searchQuery) return;
+    // Город меняем прямо в текущем запросе: Default — все города, иначе выбранный.
+    runSearch({...searchQuery, city: document.getElementById('search-city').value}, 1);
 });
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
