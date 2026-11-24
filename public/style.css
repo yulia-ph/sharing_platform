@@ -24,6 +24,7 @@ body {
     font-family: "Avenir Next", "Segoe UI", sans-serif;
     color: var(--text);
     background: var(--ink);
+    overscroll-behavior-y: none;
 }
 
 .shell {
@@ -202,9 +203,14 @@ select:focus {
 }
 
 .side {
+    position: sticky;
+    top: 0;
+    align-self: start;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
     padding: 28px 18px 20px;
     color: var(--paper);
     background:
@@ -424,6 +430,14 @@ select:focus {
 
 .item-card:hover {
     border-color: #c9c0b2;
+}
+
+.item-card-static {
+    cursor: default;
+}
+
+.item-card-static:hover {
+    border-color: var(--line);
 }
 
 .item-card-title {
@@ -841,7 +855,11 @@ select:focus {
     }
 
     .side {
+        position: static;
+        align-self: auto;
+        height: auto;
         min-height: 0;
+        overflow-y: visible;
         padding: 18px 16px 14px;
     }
 
@@ -999,4 +1017,285 @@ select:focus {
     color: var(--muted);
     font-size: 16px;
     line-height: 1;
+}
+
+/* ============ Search page ============ */
+
+#page-search h1 {
+    margin-bottom: 12px;
+}
+
+#page-search .lead {
+    margin-bottom: 2px;
+}
+
+.search-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    margin-bottom: 26px;
+}
+
+.search-field {
+    display: flex;
+    flex: 1 1 585px;
+    max-width: 585px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-field:focus-within {
+    border-color: var(--ink-soft);
+    box-shadow: 0 0 0 4px rgba(12, 25, 22, 0.08);
+}
+
+.search-field input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 14px 15px;
+    font-size: 16px;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+}
+
+.search-field input:focus {
+    border: none;
+    box-shadow: none;
+}
+
+.search-field input::placeholder {
+    color: #a8a094;
+}
+
+.search-submit {
+    flex: none;
+    margin: 5px 5px 5px 0;
+    padding: 9px 20px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--paper);
+    background: var(--ink);
+    border: none;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.search-submit:hover {
+    background: #2b3130;
+}
+
+.search-submit:disabled {
+    color: #6e675e;
+    background: #c9c2b6;
+    cursor: not-allowed;
+}
+
+.search-city {
+    flex: 0 1 520px;
+    max-width: 287px;
+}
+
+.search-city label {
+    margin-bottom: 8px;
+    padding-left: 16px;
+}
+
+.category-hint {
+    max-width: 42ch;
+    margin-bottom: 32px;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.category-tile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 24px 20px;
+    min-height: 80px;
+    font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+    font-size: 20px;
+    font-weight: 400;
+    text-align: left;
+    text-transform: capitalize;
+    color: var(--ink);
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.category-tile:hover {
+    border-color: #c9c0b2;
+}
+
+.category-tile.is-selected {
+    border-color: var(--ink);
+}
+
+/* Введённый запрос остаётся в строке поиска, но светлее */
+.search-field input.is-result {
+    color: var(--muted);
+    cursor: default;
+}
+
+#search-results-view {
+    margin-bottom: 32px;
+}
+
+.search-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.search-pagination .back-btn {
+    margin-bottom: 0;
+}
+
+.next-page-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding: 0;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.next-page-btn::after {
+    content: "→";
+    font-size: 18px;
+    line-height: 1;
+}
+
+.next-page-btn:hover {
+    color: var(--ink-soft);
+}
+
+#search-item-view {
+    max-width: 520px;
+}
+
+#search-item-view .detail-head h1 {
+    margin-bottom: 0;
+}
+
+.search-calendar {
+    margin-top: 8px;
+}
+
+.search-calendar .flatpickr-input {
+    display: none;
+}
+
+.search-calendar .flatpickr-calendar {
+    width: 372px !important;
+    padding: 14px 18px 16px;
+    font-family: inherit;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: none;
+}
+
+.search-calendar .flatpickr-days,
+.search-calendar .dayContainer,
+.search-calendar .flatpickr-weekdays,
+.search-calendar .flatpickr-weekdaycontainer {
+    width: 336px;
+    min-width: 336px;
+    max-width: 336px;
+}
+
+.search-calendar .flatpickr-current-month,
+.search-calendar .flatpickr-weekday,
+.search-calendar .flatpickr-monthDropdown-months {
+    color: var(--ink);
+    font-family: inherit;
+    font-weight: 600;
+}
+
+.search-calendar .flatpickr-day {
+    max-width: 48px;
+    height: 44px;
+    line-height: 44px;
+    color: var(--text);
+    border-radius: 8px;
+}
+
+.search-calendar .flatpickr-day.today {
+    border-color: var(--ink);
+}
+
+.search-calendar .flatpickr-day.selected,
+.search-calendar .flatpickr-day.startRange,
+.search-calendar .flatpickr-day.endRange {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+}
+
+.search-calendar .flatpickr-day.inRange {
+    background: #e7f0ec;
+    border-color: #e7f0ec;
+    box-shadow: -5px 0 0 #e7f0ec, 5px 0 0 #e7f0ec;
+    color: var(--ink);
+}
+
+.search-calendar .flatpickr-day.is-busy {
+    background: #f3ead7;
+    color: #7a5b24;
+    border-color: transparent;
+}
+
+.search-calendar .flatpickr-day.flatpickr-disabled:not(.is-busy) {
+    color: #c4bdb2;
+}
+
+.search-calendar .flatpickr-prev-month,
+.search-calendar .flatpickr-next-month {
+    color: var(--ink);
+    fill: var(--ink);
+}
+
+@media (max-width: 860px) {
+    .search-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-field,
+    .search-city {
+        flex: 1 1 auto;
+        max-width: none;
+    }
+
+    .category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
