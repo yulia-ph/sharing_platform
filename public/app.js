@@ -691,6 +691,10 @@ async function confirmCancelBooking() {
 
 // ============ Search ============
 
+let searchItemId = 0;
+let searchItemRequest = 0;
+let searchPicker = null;
+let busyRanges = [];
 let searchOptionsLoaded = false;
 let selectedCategory = '';
 let searchRequest = 0;
@@ -793,6 +797,8 @@ function showSearchBrowse() {
     document.getElementById('search-city').value = '';
     resetSearchFieldText();
     document.getElementById('search-back').hidden = true;
+    document.getElementById('search-home').hidden = false;
+    document.getElementById('search-item-view').hidden = true;
     document.getElementById('search-results-view').hidden = true;
     document.getElementById('search-browse').hidden = false;
     document.getElementById('search-results').replaceChildren();
@@ -817,9 +823,8 @@ function renderSearchResults(data) {
     }
 
     data.items.forEach((item) => {
-        // Карточка выглядит точь-в-точь как в «My items», но это чужая вещь:
-        // открывать её детальную страницу с Edit/Delete нельзя.
-        const card = element('div', 'item-card item-card-static');
+        const card = element('button', 'item-card');
+        card.type = 'button';
         const text = element('span');
         text.appendChild(element('span', 'item-card-title', item.title));
         text.appendChild(element('span', 'item-card-city', item.city));
@@ -827,6 +832,7 @@ function renderSearchResults(data) {
         card.appendChild(element(
             'span', 'pill pill-' + (item.status === 'busy' ? 'busy' : 'free'),
             statusLabel(item.status)));
+        card.addEventListener('click', () => openSearchItem(item.id));
         box.appendChild(card);
     });
 }
@@ -851,9 +857,134 @@ function renderPagination() {
     }
 }
 
+function isoDate(date) {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return date.getFullYear() + '-' + month + '-' + day;
+}
+
+function rangeHitsBusy(start, end) {
+    return busyRanges.some((range) => start <= range.end && range.start <= end);
+}
+
+function ensureSearchPicker() {
+    if (searchPicker) return;
+    searchPicker = flatpickr('#search-item-dates', {
+        inline: true,
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        minDate: 'today',
+        disable: [(date) => busyRanges.some((range) => {
+            const day = isoDate(date);
+            return range.start <= day && day <= range.end;
+        })],
+        onDayCreate(selectedDates, dateStr, instance, dayElem) {
+            const day = isoDate(dayElem.dateObj);
+            if (busyRanges.some((range) => range.start <= day && day <= range.end)) {
+                dayElem.classList.add('is-busy');
+            }
+        },
+        onChange(dates) {
+            const button = document.getElementById('search-book');
+            button.disabled = dates.length < 2;
+            if (dates.length < 2) return;
+            const start = isoDate(dates[0]);
+            const end = isoDate(dates[1]);
+            if (rangeHitsBusy(start, end)) {
+                searchPicker.clear();
+                showError('search-item-message', 'These dates are busy');
+                return;
+            }
+            clearMessage('search-item-message');
+        }
+    });
+}
+
+async function openSearchItem(id) {
+    const requestId = ++searchItemRequest;
+    searchItemId = id;
+    document.getElementById('search-home').hidden = true;
+    document.getElementById('search-item-view').hidden = false;
+    clearMessage('search-item-message');
+    document.getElementById('search-book').disabled = true;
+
+    try {
+        const item = await requestJson('/api/items?id=' + encodeURIComponent(id));
+        const bookings = await requestJson('/api/bookings?itemId=' + encodeURIComponent(id));
+        if (requestId !== searchItemRequest) return;
+
+        document.getElementById('search-item-title').textContent = item.title;
+        document.getElementById('search-item-city').textContent = item.city;
+        document.getElementById('search-item-category').textContent = item.category;
+        document.getElementById('search-item-price').textContent = formatMoney(item.pricePerDay);
+        document.getElementById('search-item-description').textContent = item.description || '';
+        const status = document.getElementById('search-item-status');
+        status.textContent = statusLabel(item.status);
+        status.className = 'pill pill-' + (item.status === 'busy' ? 'busy' : 'free');
+
+        busyRanges = bookings
+            .filter((booking) => booking.status === 'reserved' || booking.status === 'active' ||
+                booking.status === 'overdue')
+            .map((booking) => ({start: booking.startDate, end: booking.endDate}));
+        ensureSearchPicker();
+        searchPicker.set('minDate', 'today');
+        searchPicker.clear();
+        searchPicker.redraw();
+    } catch (e) {
+        if (e.status === 401 || requestId !== searchItemRequest) return;
+        showError('search-item-message', e.message || 'Server connection error');
+    }
+}
+
+function closeSearchItem() {
+    searchItemRequest++;
+    document.getElementById('search-item-view').hidden = true;
+    document.getElementById('search-home').hidden = false;
+    if (searchPicker) searchPicker.clear();
+}
+
+function clearSearchDates() {
+    if (searchPicker) searchPicker.clear();
+    document.getElementById('search-book').disabled = true;
+    clearMessage('search-item-message');
+}
+
+async function bookSearchItem() {
+    if (!searchPicker || searchPicker.selectedDates.length < 2 || !searchItemId) {
+        showError('search-item-message', 'Choose the start and the end.');
+        return;
+    }
+    const startDate = isoDate(searchPicker.selectedDates[0]);
+    const endDate = isoDate(searchPicker.selectedDates[1]);
+    if (rangeHitsBusy(startDate, endDate)) {
+        searchPicker.clear();
+        showError('search-item-message', 'These dates are busy');
+        return;
+    }
+
+    const button = document.getElementById('search-book');
+    button.disabled = true;
+    try {
+        await requestJson('/api/bookings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({itemId: searchItemId, startDate, endDate})
+        });
+        await openSearchItem(searchItemId);
+        const message = document.getElementById('search-item-message');
+        if (!message.classList.contains('error')) showSuccess('search-item-message', 'Booked.');
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('search-item-message', e.message || 'Server connection error');
+        button.disabled = !searchPicker || searchPicker.selectedDates.length < 2;
+    }
+}
+
 async function runSearch(query, page) {
     searchQuery = query;
     searchPage = page || 1;
+    document.getElementById('search-home').hidden = false;
+    document.getElementById('search-item-view').hidden = true;
     clearMessage('search-message');
 
     const params = new URLSearchParams();
@@ -913,6 +1044,9 @@ document.getElementById('booking-cancel-dialog').addEventListener('click', (even
     if (event.target.id === 'booking-cancel-dialog') closeCancelDialog();
 });
 document.getElementById('search-back').addEventListener('click', () => showSearchBrowse());
+document.getElementById('search-item-back').addEventListener('click', closeSearchItem);
+document.getElementById('search-dates-cancel').addEventListener('click', clearSearchDates);
+document.getElementById('search-book').addEventListener('click', bookSearchItem);
 document.getElementById('search-form').addEventListener('submit', submitSearch);
 document.getElementById('search-input').addEventListener('input', (event) => {
     // Как только пользователь правит строку, показной текст снова становится обычным.

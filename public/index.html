@@ -7,6 +7,7 @@
     <title>ORCA</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="vendor/flatpickr/flatpickr.min.css">
 </head>
 
 <body>
@@ -233,6 +234,7 @@
             </section>
 
             <section id="page-search" class="page">
+                <div id="search-home">
                 <button type="button" id="search-back" class="back-btn" hidden>Back to categories</button>
                 <p class="eyebrow">Search</p>
                 <h1>Find a thing</h1>
@@ -261,6 +263,42 @@
                 <div id="search-browse">
                     <p id="category-hint" class="category-hint">Or jump straight to one of these categories:</p>
                     <div id="category-grid" class="category-grid"></div>
+                </div>
+                </div>
+
+                <div id="search-item-view" hidden>
+                    <button type="button" id="search-item-back" class="back-btn">Back to search</button>
+                    <p class="eyebrow">Item</p>
+                    <div class="detail-head">
+                        <h1 id="search-item-title"></h1>
+                        <span id="search-item-status" class="pill"></span>
+                    </div>
+                    <dl class="detail-facts">
+                        <div>
+                            <dt>City</dt>
+                            <dd id="search-item-city"></dd>
+                        </div>
+                        <div>
+                            <dt>Category</dt>
+                            <dd id="search-item-category"></dd>
+                        </div>
+                        <div>
+                            <dt>Price per day</dt>
+                            <dd id="search-item-price"></dd>
+                        </div>
+                    </dl>
+                    <p id="search-item-description" class="detail-description"></p>
+                    <div id="search-item-message" class="message"></div>
+                    <div class="field">
+                        <label for="search-item-dates">Dates</label>
+                        <div class="search-calendar">
+                            <input type="text" id="search-item-dates" aria-label="Dates">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="search-book" class="solid-btn" disabled>Book item</button>
+                        <button type="button" id="search-dates-cancel" class="ghost-btn">Cancel</button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -303,6 +341,7 @@
         </div>
     </div>
 
+    <script src="vendor/flatpickr/flatpickr.min.js"></script>
     <script src="app.js"></script>
 </body>
 
