@@ -43,6 +43,10 @@ function showPage(name) {
     });
     if (name === 'items') showItemsList();
     if (name === 'bookings') showBookings();
+    if (name === 'search') {
+        showSearchBrowse();
+        loadSearchOptions();
+    }
 }
 
 function showApp(username) {
@@ -685,6 +689,332 @@ async function confirmCancelBooking() {
     }
 }
 
+// ============ Search ============
+
+let searchItemId = 0;
+let searchItemRequest = 0;
+let searchPicker = null;
+let busyRanges = [];
+let searchOptionsLoaded = false;
+let selectedCategory = '';
+let searchRequest = 0;
+let searchQuery = null;
+let searchPage = 1;
+let searchPages = 0;
+
+async function loadSearchOptions() {
+    if (searchOptionsLoaded) return;
+    try {
+        const cities = await requestJson('/api/cities');
+        const select = document.getElementById('search-city');
+        cities.forEach((city) => {
+            const option = document.createElement('option');
+            option.value = city;
+            option.textContent = city;
+            select.appendChild(option);
+        });
+
+        const categories = await requestJson('/api/categories');
+        const grid = document.getElementById('category-grid');
+        grid.replaceChildren();
+        categories.forEach((name) => {
+            const tile = element('button', 'category-tile', name);
+            tile.type = 'button';
+            tile.dataset.category = name;
+            tile.addEventListener('click', () => selectCategory(name));
+            grid.appendChild(tile);
+        });
+
+        searchOptionsLoaded = true;
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('search-message', e.message || 'Server connection error');
+    }
+}
+
+function updateSearchButton() {
+    const input = document.getElementById('search-input');
+    document.getElementById('search-button').disabled = input.value.trim().length === 0;
+}
+
+function markSelectedCategory() {
+    document.querySelectorAll('.category-tile').forEach((tile) => {
+        tile.classList.toggle('is-selected', tile.dataset.category === selectedCategory);
+    });
+}
+
+function selectCategory(name) {
+    if (selectedCategory === name) {
+        // Повторное нажатие снимает выбор и возвращает первую страницу поиска.
+        showSearchBrowse();
+        return;
+    }
+    selectedCategory = name;
+    markSelectedCategory();
+    runSearch({
+        city: document.getElementById('search-city').value,
+        category: selectedCategory,
+        title: ''
+    });
+}
+
+function submitSearch(event) {
+    event.preventDefault();
+
+    const input = document.getElementById('search-input');
+    // Enter на странице результатов с нетронутой строкой просто повторяет поиск.
+    if (input.classList.contains('is-result') && searchQuery) {
+        runSearch(searchQuery, 1);
+        return;
+    }
+
+    const title = input.value.trim();
+    if (!title) return;
+
+    // Поиск по названию сбрасывает выбранную категорию (сервер не принимает оба фильтра).
+    selectedCategory = '';
+    markSelectedCategory();
+    runSearch({city: document.getElementById('search-city').value, category: '', title});
+}
+
+// Показываем на второй странице поиска то, что ввёл пользователь: название или категорию.
+// Текст остаётся в строке, но светлее; его можно стереть и искать заново.
+function showSearchFieldText(query) {
+    const input = document.getElementById('search-input');
+    input.value = query.category || query.title || '';
+    input.classList.add('is-result');
+    updateSearchButton();
+}
+
+// Возвращаем страницу поиска в исходное состояние (первая страница с категориями).
+function showSearchBrowse() {
+    searchRequest++;
+    searchQuery = null;
+    searchPage = 1;
+    searchPages = 0;
+    selectedCategory = '';
+    markSelectedCategory();
+    document.getElementById('search-city').value = '';
+    resetSearchFieldText();
+    document.getElementById('search-back').hidden = true;
+    document.getElementById('search-home').hidden = false;
+    document.getElementById('search-item-view').hidden = true;
+    document.getElementById('search-results-view').hidden = true;
+    document.getElementById('search-browse').hidden = false;
+    document.getElementById('search-results').replaceChildren();
+    document.getElementById('search-pagination').replaceChildren();
+    clearMessage('search-message');
+}
+
+// Возвращаем строку поиска в исходное состояние первой страницы.
+function resetSearchFieldText() {
+    const input = document.getElementById('search-input');
+    input.value = '';
+    input.classList.remove('is-result');
+    updateSearchButton();
+}
+
+function renderSearchResults(data) {
+    const box = document.getElementById('search-results');
+    box.replaceChildren();
+    if (!data.items.length) {
+        box.appendChild(element('p', 'empty-note', 'Nothing found for this search.'));
+        return;
+    }
+
+    data.items.forEach((item) => {
+        const card = element('button', 'item-card');
+        card.type = 'button';
+        const text = element('span');
+        text.appendChild(element('span', 'item-card-title', item.title));
+        text.appendChild(element('span', 'item-card-city', item.city));
+        card.appendChild(text);
+        card.appendChild(element(
+            'span', 'pill pill-' + (item.status === 'busy' ? 'busy' : 'free'),
+            statusLabel(item.status)));
+        card.addEventListener('click', () => openSearchItem(item.id));
+        box.appendChild(card);
+    });
+}
+
+function renderPagination() {
+    const box = document.getElementById('search-pagination');
+    box.replaceChildren();
+    if (searchPages <= 1) return;
+
+    if (searchPage > 1) {
+        const previous = element('button', 'back-btn', 'Previous page');
+        previous.type = 'button';
+        previous.addEventListener('click', () => runSearch(searchQuery, searchPage - 1));
+        box.appendChild(previous);
+    }
+
+    if (searchPage < searchPages) {
+        const next = element('button', 'next-page-btn', 'Next page');
+        next.type = 'button';
+        next.addEventListener('click', () => runSearch(searchQuery, searchPage + 1));
+        box.appendChild(next);
+    }
+}
+
+function isoDate(date) {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return date.getFullYear() + '-' + month + '-' + day;
+}
+
+function rangeHitsBusy(start, end) {
+    return busyRanges.some((range) => start <= range.end && range.start <= end);
+}
+
+function ensureSearchPicker() {
+    if (searchPicker) return;
+    searchPicker = flatpickr('#search-item-dates', {
+        inline: true,
+        mode: 'range',
+        dateFormat: 'Y-m-d',
+        minDate: 'today',
+        disable: [(date) => busyRanges.some((range) => {
+            const day = isoDate(date);
+            return range.start <= day && day <= range.end;
+        })],
+        onDayCreate(selectedDates, dateStr, instance, dayElem) {
+            const day = isoDate(dayElem.dateObj);
+            if (busyRanges.some((range) => range.start <= day && day <= range.end)) {
+                dayElem.classList.add('is-busy');
+            }
+        },
+        onChange(dates) {
+            const button = document.getElementById('search-book');
+            button.disabled = dates.length < 2;
+            if (dates.length < 2) return;
+            const start = isoDate(dates[0]);
+            const end = isoDate(dates[1]);
+            if (rangeHitsBusy(start, end)) {
+                searchPicker.clear();
+                showError('search-item-message', 'These dates are busy');
+                return;
+            }
+            clearMessage('search-item-message');
+        }
+    });
+}
+
+async function openSearchItem(id) {
+    const requestId = ++searchItemRequest;
+    searchItemId = id;
+    document.getElementById('search-home').hidden = true;
+    document.getElementById('search-item-view').hidden = false;
+    clearMessage('search-item-message');
+    document.getElementById('search-book').disabled = true;
+
+    try {
+        const item = await requestJson('/api/items?id=' + encodeURIComponent(id));
+        const bookings = await requestJson('/api/bookings?itemId=' + encodeURIComponent(id));
+        if (requestId !== searchItemRequest) return;
+
+        document.getElementById('search-item-title').textContent = item.title;
+        document.getElementById('search-item-city').textContent = item.city;
+        document.getElementById('search-item-category').textContent = item.category;
+        document.getElementById('search-item-price').textContent = formatMoney(item.pricePerDay);
+        document.getElementById('search-item-description').textContent = item.description || '';
+        const status = document.getElementById('search-item-status');
+        status.textContent = statusLabel(item.status);
+        status.className = 'pill pill-' + (item.status === 'busy' ? 'busy' : 'free');
+
+        busyRanges = bookings
+            .filter((booking) => booking.status === 'reserved' || booking.status === 'active' ||
+                booking.status === 'overdue')
+            .map((booking) => ({start: booking.startDate, end: booking.endDate}));
+        ensureSearchPicker();
+        searchPicker.set('minDate', 'today');
+        searchPicker.clear();
+        searchPicker.redraw();
+    } catch (e) {
+        if (e.status === 401 || requestId !== searchItemRequest) return;
+        showError('search-item-message', e.message || 'Server connection error');
+    }
+}
+
+function closeSearchItem() {
+    searchItemRequest++;
+    document.getElementById('search-item-view').hidden = true;
+    document.getElementById('search-home').hidden = false;
+    if (searchPicker) searchPicker.clear();
+}
+
+function clearSearchDates() {
+    if (searchPicker) searchPicker.clear();
+    document.getElementById('search-book').disabled = true;
+    clearMessage('search-item-message');
+}
+
+async function bookSearchItem() {
+    if (!searchPicker || searchPicker.selectedDates.length < 2 || !searchItemId) {
+        showError('search-item-message', 'Choose the start and the end.');
+        return;
+    }
+    const startDate = isoDate(searchPicker.selectedDates[0]);
+    const endDate = isoDate(searchPicker.selectedDates[1]);
+    if (rangeHitsBusy(startDate, endDate)) {
+        searchPicker.clear();
+        showError('search-item-message', 'These dates are busy');
+        return;
+    }
+
+    const button = document.getElementById('search-book');
+    button.disabled = true;
+    try {
+        await requestJson('/api/bookings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({itemId: searchItemId, startDate, endDate})
+        });
+        await openSearchItem(searchItemId);
+        const message = document.getElementById('search-item-message');
+        if (!message.classList.contains('error')) showSuccess('search-item-message', 'Booked.');
+    } catch (e) {
+        if (e.status === 401) return;
+        showError('search-item-message', e.message || 'Server connection error');
+        button.disabled = !searchPicker || searchPicker.selectedDates.length < 2;
+    }
+}
+
+async function runSearch(query, page) {
+    searchQuery = query;
+    searchPage = page || 1;
+    document.getElementById('search-home').hidden = false;
+    document.getElementById('search-item-view').hidden = true;
+    clearMessage('search-message');
+
+    const params = new URLSearchParams();
+    if (query.city) params.set('city', query.city);
+    if (query.category) params.set('category', query.category);
+    if (query.title) params.set('q', query.title);
+    if (searchPage > 1) params.set('page', String(searchPage));
+
+    const requestId = ++searchRequest;
+    const button = document.getElementById('search-button');
+    button.disabled = true;
+    try {
+        const data = await requestJson('/api/search?' + params.toString());
+        if (requestId !== searchRequest) return;
+        searchPage = data.page;
+        searchPages = data.pages;
+        showSearchFieldText(query);
+        document.getElementById('search-back').hidden = false;
+        document.getElementById('search-browse').hidden = true;
+        document.getElementById('search-results-view').hidden = false;
+        renderSearchResults(data);
+        renderPagination();
+    } catch (e) {
+        if (e.status === 401 || requestId !== searchRequest) return;
+        showError('search-message', e.message || 'Server connection error');
+    } finally {
+        if (requestId === searchRequest) updateSearchButton();
+    }
+}
+
 // ============ Event listeners ============
 
 document.getElementById('login-form').addEventListener('submit', submitLogin);
@@ -712,6 +1042,21 @@ document.getElementById('booking-cancel-no').addEventListener('click', closeCanc
 document.getElementById('booking-cancel-yes').addEventListener('click', confirmCancelBooking);
 document.getElementById('booking-cancel-dialog').addEventListener('click', (event) => {
     if (event.target.id === 'booking-cancel-dialog') closeCancelDialog();
+});
+document.getElementById('search-back').addEventListener('click', () => showSearchBrowse());
+document.getElementById('search-item-back').addEventListener('click', closeSearchItem);
+document.getElementById('search-dates-cancel').addEventListener('click', clearSearchDates);
+document.getElementById('search-book').addEventListener('click', bookSearchItem);
+document.getElementById('search-form').addEventListener('submit', submitSearch);
+document.getElementById('search-input').addEventListener('input', (event) => {
+    // Как только пользователь правит строку, показной текст снова становится обычным.
+    event.target.classList.remove('is-result');
+    updateSearchButton();
+});
+document.getElementById('search-city').addEventListener('change', () => {
+    if (!searchQuery) return;
+    // Город меняем прямо в текущем запросе: Default — все города, иначе выбранный.
+    runSearch({...searchQuery, city: document.getElementById('search-city').value}, 1);
 });
 document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
